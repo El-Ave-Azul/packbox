@@ -106,7 +106,7 @@ Packbox は Flatpak を**置き換えようとしているわけではありま�
 ## インストール
 
 ```bash
-git clone https://github.com/TU_USUARIO/packbox.git
+git clone https://github.com/El-Ave-Azul/packbox.git
 cd packbox
 ./packbox-installer-v0.1.0.sh
 source ~/.bashrc
