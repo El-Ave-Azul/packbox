@@ -103,7 +103,7 @@ Famiglie supportate: **Debian/Ubuntu/Mint/Pop**, **Fedora/RHEL/Rocky**,
 ## Installazione
 
 ```bash
-git clone https://github.com/TU_USUARIO/packbox.git
+git clone https://github.com/El-Ave-Azul/packbox.git
 cd packbox
 ./packbox-installer-v0.1.0.sh
 source ~/.bashrc
