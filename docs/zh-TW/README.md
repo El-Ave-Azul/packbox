@@ -98,7 +98,7 @@ Packbox **並不試圖**取代 Flatpak。它探索的是一個不同的細分場
 ## 安裝
 
 ```bash
-git clone https://github.com/TU_USUARIO/packbox.git
+git clone https://github.com/El-Ave-Azul/packbox.git
 cd packbox
 ./packbox-installer-v0.1.0.sh
 source ~/.bashrc
