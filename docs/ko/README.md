@@ -101,7 +101,7 @@ Packbox는 Flatpak을 **대체하려는 것이 아닙니다**. 런타임에 깔�
 ## 설치
 
 ```bash
-git clone https://github.com/TU_USUARIO/packbox.git
+git clone https://github.com/El-Ave-Azul/packbox.git
 cd packbox
 ./packbox-installer-v0.1.0.sh
 source ~/.bashrc
