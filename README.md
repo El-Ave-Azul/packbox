@@ -1,6 +1,3 @@
-# packbox
-Next-gen app packaging with chunk-level dedup (Flatpak-inspired)
-
 ═══════════════════════════════════════════════════════════════════════════════
 PACKBOX v0.1.0 ALPHA — DOCUMENTACIÓN COMPLETA / COMPLETE DOCUMENTATION
 9 idiomas / 9 languages: EN · ES · FR · DE · IT · zh-CN · zh-TW · JA · KO
