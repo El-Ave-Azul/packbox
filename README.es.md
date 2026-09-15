@@ -1,393 +1,385 @@
-<!-- Selector de idioma -->
-[English](README.md) · **Español** · [Français](docs/fr/README.md) · [Deutsch](docs/de/README.md) · [Italiano](docs/it/README.md) · [简体中文](docs/zh-CN/README.md) · [繁體中文](docs/zh-TW/README.md) · [日本語](docs/ja/README.md) · [한국어](docs/ko/README.md)
+# 📦 Packbox v0.1.0 Alpha
+
+**Sistema de empaquetamiento de aplicaciones Linux con deduplicación binaria y portabilidad entre distribuciones.**
+
+[![Licencia](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)](LICENSE)
+[![Versión](https://img.shields.io/badge/Versión-0.1.0--Alpha-orange.svg)](https://github.com/TU_USUARIO/packbox/releases)
+[![Plataforma](https://img.shields.io/badge/Plataforma-Linux-blue.svg)](#)
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)](https://golang.org/)
+[![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)](#-idiomas)
 
 ---
 
-<!-- Insignias -->
-![Licencia: MIT](https://img.shields.io/badge/Licencia-MIT-yellow.svg)
-![Plataforma: Linux](https://img.shields.io/badge/plataforma-Linux-blue)
-![Versión](https://img.shields.io/badge/versión-0.1.0--alpha-orange)
-![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)
-![i18n](https://img.shields.io/badge/i18n-9_idiomas-green)
-![Estado](https://img.shields.io/badge/estado-alpha-red)
+## 🌍 Idiomas
 
-# Packbox
-
-**Sistema de empaquetado de aplicaciones de nueva generación para Linux.**
-Inspirado en Flatpak, pero con un modelo de reutilización fundamentalmente
-distinto: en lugar de enviar un runtime monolítico por aplicación, Packbox
-almacena cada archivo como chunks direccionados por contenido (BLAKE3 CAS).
-Dos apps que comparten el 90% de sus librerías solo almacenan el 10% que
-difiere.
-
-> [!NOTE]
-> **Packbox está en Alpha (v0.1.0).** Los flujos principales funcionan, pero
-> todavía no hay verificación de firmas en archivos `.pbox` y el sandbox es
-> intencionalmente más permisivo que Flatpak. Úsalo primero en sistemas no
-> críticos.
+| Idioma | Código |
+|--------|--------|
+| 🇬🇧 English | `en` |
+| 🇪🇸 Español | `es` |
+| 🇫🇷 Français | `fr` |
+| 🇩🇪 Deutsch | `de` |
+| 🇮🇹 Italiano | `it` |
+| 🇨🇳 简体中文 | `zh-CN` |
+| 🇹🇼 繁體中文 | `zh-TW` |
+| 🇯🇵 日本語 | `ja` |
+| 🇰🇷 한국어 | `ko` |
 
 ---
 
-## Tabla de contenidos
-
-- [Por qué Packbox](#por-qué-packbox)
-- [Comparación con Flatpak](#comparación-con-flatpak)
-- [Requisitos](#requisitos)
-- [Instalación](#instalación)
-- [Uso rápido](#uso-rápido)
-- [Comandos](#comandos)
-- [Estructura del sistema de archivos](#estructura-del-sistema-de-archivos)
-- [Arquitectura](#arquitectura)
-- [Seguridad](#seguridad)
-- [Hoja de ruta](#hoja-de-ruta)
-- [Documentación](#documentación)
-- [Contribuir](#contribuir)
-- [Licencia](#licencia)
-- [Agradecimientos](#agradecimientos)
+> [!WARNING]
+> **Estado Alpha (v0.1.0).** Los flujos principales funcionan, pero no hay verificación de firmas en archivos `.pbox` y el sandbox es intencionalmente más permisivo que Flatpak. Úsalo primero en sistemas no críticos.
 
 ---
 
-## Por qué Packbox
+## 📋 Tabla de Contenidos
 
-Flatpak resolvió un problema real: apps Linux sandboxeadas y portables. Pero
-su modelo de reutilización es grueso. Cada app envía (o referencia) un
-runtime completo que puede pesar **~1 GB**. Si dos apps usan runtimes
-distintos, pagas el costo dos veces — incluso si comparten el 95% de sus
-librerías.
-
-Packbox ataca ese hueco específico:
-
-- **Deduplicación a nivel de chunk.** Los archivos se dividen, se hashean
-  con BLAKE3 y se almacenan como chunks. Chunks idénticos (una
-  `libfoo.so.3.2.1`, una fuente, un catálogo de traducciones) se comparten
-  entre todas las apps del sistema.
-- **Compartición de librerías entre apps.** Dos apps que usan la misma
-  `libQt6Core.so` mantienen una sola copia en disco, sin importar a qué
-  "runtime" pertenezcan.
-- **Uso selectivo de librerías del host.** Las apps pueden declarar en qué
-  librerías del host confían (vía `host_contract.delegate`), en vez de
-  empaquetar todo.
-- **Huella pequeña por app.** En la práctica, añadir una nueva app sobre un
-  conjunto existente cuesta ~5–15% de su tamaño, no ~100%.
-
-Packbox **no** intenta reemplazar a Flatpak. Explora un nicho distinto: apps
-que no encajan limpiamente en un runtime, o donde enviar 1 GB para correr
-una herramienta de 50 MB es exagerado.
+- [¿Qué es Packbox?](#-qué-es-packbox)
+- [Comparación con Flatpak](#-comparación-con-flatpak)
+- [Requisitos](#-requisitos)
+- [Instalación](#-instalación)
+- [Uso Rápido](#-uso-rápido)
+- [Comandos Disponibles](#-comandos-disponibles)
+- [Estructura de Archivos](#-estructura-de-archivos)
+- [Arquitectura](#-arquitectura)
+- [Seguridad](#-seguridad)
+- [Hoja de Ruta](#-hoja-de-ruta)
+- [Contribuir](#-contribuir)
+- [Licencia](#-licencia)
 
 ---
 
-## Comparación con Flatpak
+## 💡 ¿Qué es Packbox?
 
-| Característica       | Flatpak (actual)                 | Packbox (propuesto)             |
-|----------------------|----------------------------------|---------------------------------|
-| Unidad de reuso      | Runtime completo (~1 GB)         | Celda atómica (~5–50 MB)        |
-| Deduplicación        | A nivel de archivo (OSTree)      | A nivel de chunk (BLAKE3 CAS)   |
-| Compartición de libs | Dentro del mismo runtime         | Cruzada entre todas las apps    |
-| Uso de libs del host | Ninguno (sandbox completo)       | Selectivo (ABI compatible)      |
-| Actualizaciones      | Delta de objetos OSTree          | Delta de chunks + reordenación  |
-| Overhead por app     | ~100% si runtime distinto        | ~5–15% (solo diferencias)       |
+Packbox es un sistema de empaquetamiento de aplicaciones Linux que utiliza **Content-Addressable Storage (CAS)** con hashing **BLAKE3** para lograr deduplicación binaria real entre aplicaciones.
 
----
+En lugar de enviar un runtime monolítico de ~1 GB por aplicación (como Flatpak), Packbox almacena cada archivo como chunks direccionados por contenido. Dos apps que comparten el 90% de sus librerías solo almacenan el 10% que difiere.
 
-## Requisitos
+### Principios de Diseño
 
-- **Linux** (probado en Debian 12, Fedora 40, Arch actual)
-- **Bash 4+**
-- **Go 1.22+** (auto-instalado si falta)
-- **bubblewrap** (`bwrap`) — auto-instalado
-- **binutils** (`ldd`, `readelf`) — auto-instalado
-- **Herramientas de compresión**: `zstd`, `xz`, `gzip` (al menos una)
-- **~500 MB libres** para el build + toolchain si Go se instala desde cero
-
-Familias soportadas: **Debian/Ubuntu/Mint/Pop**, **Fedora/RHEL/Rocky**,
-**Arch/Manjaro/EndeavourOS**, **openSUSE**.
+- **Deduplicación a nivel de chunk**: Mismos bytes = mismo hash = almacenado una vez.
+- **Compartición cruzada**: Todas las apps comparten el mismo almacén CAS global.
+- **Host Contracts v1**: Delegación selectiva de librerías universales (libc, libm, libdl, libpthread, libz).
+- **Sandbox con bubblewrap**: Aislamiento de namespaces con soporte GUI completo.
+- **4 modos de empaquetado**: Normal, Portable, Bundle, Module.
 
 ---
 
-## Instalación
+## 📊 Comparación con Flatpak
+
+| Característica | Flatpak (actual) | Packbox v0.1.0 |
+|---|---|---|
+| Unidad de reuso | Runtime completo (~1 GB) | Celda atómica (~5-50 MB) |
+| Deduplicación | A nivel de archivo (OSTree) | A nivel de chunk (BLAKE3 CAS) |
+| Compartición de libs | Dentro del mismo runtime | Cruzada entre todas las apps |
+| Uso de libs del host | Ninguno (sandbox completo) | Selectivo (ABI compatible) |
+| Actualizaciones | Delta de objetos OSTree | Delta de chunks + reordenación |
+| Overhead por app | ~100% si runtime distinto | ~5-15% (solo diferencias) |
+| Tamaño típico | 500 MB - 2 GB | 500 KB - 300 MB |
+| Ahorro promedio | Línea base | **~90-99%** |
+
+---
+
+## ⚙️ Requisitos
+
+- **Sistema Operativo**: Linux (Debian 12+, Ubuntu 22.04+, Fedora 40+, Arch, openSUSE)
+- **Kernel**: 5.15+ con user namespaces habilitados
+- **Shell**: Bash 4.0+
+- **Go**: 1.22+ (se instala automáticamente si falta)
+- **Espacio**: ~500 MB libres para la compilación inicial
+- **Internet**: Solo para la primera instalación
+
+### Dependencias del Sistema (instaladas automáticamente)
+
+`bubblewrap` · `binutils` · `jq` · `bc` · `curl` · `tar`
+
+---
+
+## 📥 Instalación
+
+### Paso 1: Clonar y ejecutar
 
 ```bash
-git clone https://github.com/El-Ave-Azul/packbox.git
+git clone https://github.com/TU_USUARIO/packbox.git
 cd packbox
+chmod +x packbox-installer-v0.1.0.sh
 ./packbox-installer-v0.1.0.sh
+```
+
+### Paso 2: Recargar el shell
+
+```bash
 source ~/.bashrc
+```
+
+### Paso 3: Verificar
+
+```bash
 packbox-diagnose
 ```
 
-El instalador es interactivo y:
+### ¿Qué hace el instalador?
 
-1. Detecta tu distro y gestor de paquetes.
-2. Pregunta antes de instalar dependencias
-   (`bubblewrap binutils jq bc curl tar`).
-3. Instala Go 1.22+ si falta.
-4. Crea `~/.packbox/{bin,src}` y
-   `~/.local/share/packbox/{store,apps,mods,exports,tmp}`.
-5. Genera 11 binarios Go + paquetes internos desde el código local.
-6. Compila todo (~2–3 minutos en hardware moderno).
-7. Añade `~/.packbox/bin` al `PATH` y crea symlinks en `~/.local/bin`.
-8. Verifica que los 11 binarios estén presentes.
-
-**Idiomas**: el instalador pregunta por uno de 9 locales al inicio —
-English, Español, Français, Deutsch, Italiano, 简体中文, 繁體中文, 日本語,
-한국어.
+1. Te permite seleccionar uno de 9 idiomas
+2. Detecta tu distribución Linux y gestor de paquetes
+3. Te pide confirmación antes de instalar dependencias
+4. Descarga e instala Go 1.22+ en `/usr/local/go` si no lo detecta
+5. Crea la estructura de directorios (`~/.packbox/` y `~/.local/share/packbox/`)
+6. Genera el proyecto Go completo con los 11 binarios
+7. Compila todos los binarios nativamente (~2-3 minutos)
+8. Configura tu PATH en `~/.bashrc` y crea symlinks en `~/.local/bin`
+9. Instala los archivos de traducción en `~/.config/packbox/lang/`
+10. Verifica que todos los binarios estén presentes y funcionales
 
 ### Desinstalación
 
 Ejecuta el mismo script y elige la opción `2`:
 
-- Modo `s` → eliminación completa (binarios + apps + store + menús + config)
-- Modo `k` → solo binarios (conserva apps y store)
-- Modo `q` → cancelar
+```bash
+./packbox-installer-v0.1.0.sh
+# Seleccionar opción 2 (Desinstalar)
+```
 
-Requiere escribir `DELETE` para confirmar.
+| Modo | Descripción |
+|------|-------------|
+| `s` (Completo) | Elimina binarios, apps, store CAS, menús, iconos y configuración |
+| `k` (Solo binarios) | Solo elimina `~/.packbox/` y symlinks (conserva apps y store) |
+
+> Requiere escribir `DELETE` en mayúsculas para confirmar.
 
 ---
 
-## Uso rápido
+## 🚀 Uso Rápido
 
-### Empaquetador interactivo (recomendado para nuevos usuarios)
+### 1. Empaquetador Interactivo (Recomendado)
 
 ```bash
 ./packbox-packager-v0.1.0.sh
 ```
 
-Menú: empaquetar, listar, gc, exportar, importar, desinstalar.
+Este script interactivo te permite:
 
-### Línea de comandos
+- Detectar aplicaciones instaladas (`.desktop`, bundles en `/opt`, binarios comunes)
+- Empaquetar apps en modo **Normal**, **Portable** o **Bundle**
+- Listar apps ya empaquetadas
+- Ejecutar Garbage Collection
+- Exportar/Importar apps como archivos `.pbox`
+- Desinstalar apps empaquetadas
+
+### 2. Línea de Comandos
 
 ```bash
-# 1. Empaquetar un directorio en chunks CAS + manifest.json
-packbox-pack ./firefox-tree \
-    --name org.mozilla.firefox \
-    --version 128.0 \
-    --description "Mozilla Firefox" \
-    --gui --toolkit GTK3
+# Empaquetar un directorio
+packbox-pack ./mi-app --name org.ejemplo.miapp --version 1.0.0
 
-# 2. Instalar desde el manifest generado
-packbox-install ./firefox-tree/manifest.json
+# Instalar desde el manifiesto generado
+packbox-install ./mi-app/manifest.json
 
-# 3. Ejecutar dentro de un sandbox bwrap (con fix DNS + GUI)
-packbox-run org.mozilla.firefox
+# Ejecutar en sandbox
+packbox-run org.ejemplo.miapp
 
-# 4. Ver qué está instalado
+# Listar apps instaladas
 packbox-list
 
-# 5. Desinstalar y liberar chunks
-packbox-remove org.mozilla.firefox
+# Desinstalar y liberar espacio
+packbox-remove org.ejemplo.miapp
 packbox-gc
 ```
 
----
+### 3. Exportar e Importar
 
-## Comandos
+```bash
+# Exportar a archivo .pbox
+packbox-export app org.ejemplo.miapp
 
-Once binarios Go, todos en `~/.packbox/bin/`:
-
-| Comando             | Propósito                                                   |
-|---------------------|-------------------------------------------------------------|
-| `packbox-pack`      | Hashear un directorio en chunks CAS + `manifest.json`       |
-| `packbox-install`   | Instalar desde manifest (hardlink desde CAS)                |
-| `packbox-run`       | Ejecutar dentro de `bwrap` con DNS + GUI                    |
-| `packbox-list`      | Listar apps instaladas con versión y etiquetas              |
-| `packbox-remove`    | Desinstalar app y liberar sus referencias CAS               |
-| `packbox-gc`        | Recolectar chunks huérfanos                                 |
-| `packbox-verify`    | Verificación de compatibilidad de libs vía `ldd`            |
-| `packbox-export`    | Exportar app a `.pbox` (zstd/xz/gzip)                       |
-| `packbox-import`    | Importar `.pbox` con validación anti path-traversal         |
-| `packbox-module`    | Gestionar módulos de librerías compartidas (`list`, `create`) |
-| `packbox-diagnose`  | Imprimir reporte del entorno para reportes de bugs          |
-
-Referencia completa con opciones, códigos de salida y ejemplos:
-[`docs/es/commands.md`](docs/es/commands.md) ·
-[`docs/en/commands.md`](docs/en/commands.md)
-
-### Scripts interactivos
-
-- `packbox-installer-v0.1.0.sh` — instalar / desinstalar
-- `packbox-packager-v0.1.0.sh` — empaquetar, listar, gc, exportar, importar, desinstalar
-- `packbox-i18n.sh` — capa de traducción compartida (sourceada por los dos anteriores)
-
----
-
-## Estructura del sistema de archivos
-
-```
-~/.packbox/                     # Instalación (binarios + código Go)
-├── bin/                        # 11 binarios Go
-└── src/                        # Código fuente del módulo Go
-
-~/.local/share/packbox/         # Datos
-├── store/                      # CAS — chunks por hash BLAKE3
-│   └── <ab>/<hash-completo>    # más un archivo .refs por chunk
-├── apps/                       # Apps instaladas (tree + manifest.json)
-├── mods/                       # Módulos de librerías compartidas
-├── exports/                    # Archivos .pbox
-└── tmp/                        # Espacio de trabajo temporal
-
-~/.config/packbox/lang/         # 9 archivos de idioma
+# Importar en otra máquina
+packbox-import app org.ejemplo.miapp.pbox
 ```
 
 ---
 
-## Arquitectura
+## 🛠️ Comandos Disponibles
 
-Tres piezas móviles:
+Packbox v0.1.0 Alpha incluye **11 binarios Go** compilados en `~/.packbox/bin/`:
+
+| Comando | Propósito |
+|---------|-----------|
+| `packbox-pack` | Hashea un directorio en chunks CAS y genera `manifest.json` |
+| `packbox-install` | Instala una app desde el manifiesto (hardlinks desde CAS) |
+| `packbox-run` | Ejecuta la app en sandbox bwrap (con fix DNS y GUI) |
+| `packbox-list` | Lista apps instaladas con versión y etiquetas |
+| `packbox-remove` | Desinstala una app y libera sus referencias CAS |
+| `packbox-gc` | Recolecta y elimina chunks huérfanos |
+| `packbox-verify` | Verifica compatibilidad de librerías del host vía `ldd` |
+| `packbox-export` | Exporta una app a archivo `.pbox` comprimido |
+| `packbox-import` | Importa un `.pbox` con validación anti path-traversal |
+| `packbox-module` | Gestiona módulos de librerías compartidas |
+| `packbox-diagnose` | Genera reporte del entorno para bugs |
+
+---
+
+## 📂 Estructura de Archivos
 
 ```
-┌──────────────┐   pack    ┌──────────────┐   install   ┌──────────────┐
-│  Dir fuente  │ ────────► │     CAS      │ ──────────► │  Tree de app │
-│  (árbol fs)  │           │  (chunks)    │             │ (hardlinks)  │
-└──────────────┘           └──────────────┘             └──────────────┘
+~/.packbox/                              # Instalación
+├── bin/                                 # 11 binarios Go compilados
+└── src/                                 # Código fuente Go
+
+~/.local/share/packbox/                  # Datos de usuario
+├── store/                               # CAS: chunks por hash BLAKE3
+│   └── <ab>/<hash-completo>             # + archivo .refs por chunk
+├── apps/                                # Apps instaladas
+│   └── <app-id>/
+│       ├── manifest.json
+│       └── tree/                        # Hardlinks al CAS
+├── mods/                                # Módulos compartidos
+├── exports/                             # Archivos .pbox
+└── tmp/                                 # Temporales
+
+~/.config/packbox/
+└── lang/                                # 9 archivos de idioma
+```
+
+---
+
+## 🏗️ Arquitectura
+
+### Flujo de Empaquetado
+
+```
+┌──────────────┐   pack    ┌──────────────┐  install  ┌──────────────┐
+│  Dir fuente  │ ────────► │     CAS      │ ─────────► │  Tree de app │
+│  (árbol fs)  │           │  (chunks)    │           │ (hardlinks)  │
+└──────────────┘           └──────────────┘           └──────────────┘
                                   │
                                   │ run
                                   ▼
                          ┌──────────────────┐
                          │  Sandbox bwrap   │
-                         │  (fix DNS/GUI)   │
+                         │ (fix DNS + GUI)  │
                          └──────────────────┘
 ```
 
-- **CAS** — `~/.local/share/packbox/store/`, hashes BLAKE3, un archivo
-  `.refs` por chunk, `SafeLink` (hardlink → copia como fallback) al instalar.
-- **Manifest** — `schema_version: "1.5"`, `layers.app.files` mapea rutas
-  relativas a `{chunks, size, mode}`, más `host_contract.delegate` para
-  confianza en librerías del host.
-- **Sandbox** — `bwrap --unshare-all --share-net`, whitelist de env después
-  de `--clearenv`, resolución de symlinks DNS (`EvalSymlinks`) antes de
-  bindear `/etc/resolv.conf`, soporte GUI (X11, Wayland, D-Bus, `/dev/dri`,
-  caché fontconfig), mapa heurístico de datos por app con `--bind-try`.
+### Componentes Internos
 
-Arquitectura completa (internals del CAS, esquema del manifest, mounts del
-sandbox, host contract):
-[`docs/es/architecture.md`](docs/es/architecture.md) ·
-[`docs/en/architecture.md`](docs/en/architecture.md)
+- **CAS**: Almacena chunks por hash BLAKE3. Usa `SafeLink` (hardlink con fallback a copia).
+- **Manifiesto**: `schema_version: "1.5"`, mapea rutas a chunks, define `host_contract.delegate`.
+- **Sandbox**: `bwrap --unshare-all --share-net`. Resuelve symlinks DNS (`filepath.EvalSymlinks`) antes de bindear `/etc/resolv.conf`. Soporte GUI: X11, Wayland, D-Bus, `/dev/dri`, fontconfig.
+
+### Flujo de Deduplicación
+
+```
+App 1: htop     → chunks: [A, B, C]
+App 2: neofetch → chunks: [A, D, E]
+App 3: btop     → chunks: [A, B, F]
+
+CAS Store:
+  A → refs: htop, neofetch, btop (3)
+  B → refs: htop, btop (2)
+  C → refs: htop (1)
+  D → refs: neofetch (1)
+  E → refs: neofetch (1)
+  F → refs: btop (1)
+
+Total: 6 chunks únicos en lugar de 9 (33% deduplicación)
+Con más apps: el ahorro escala al 90-99%
+```
 
 ---
 
-## Seguridad
+## 🔒 Seguridad
+
+### Mitigaciones Implementadas
+
+- **Anti path-traversal**: `isValidHash()` valida 64 caracteres hex lowercase. La importación `.pbox` valida cada entrada TAR contra la raíz de extracción.
+- **Importación segura**: El extractor TAR solo procesa `tar.TypeDir` y `tar.TypeReg`. Symlinks, hardlinks y device files se ignoran.
+- **Limpieza de entorno**: `--clearenv` + whitelist explícita bloquea `LD_PRELOAD` y `LD_LIBRARY_PATH`.
+- **Aislamiento de XAUTHORITY**: Se copia a `/tmp/packbox-xauth-<pid>` con modo `0600`.
+- **Reference counting**: Cada chunk tiene `.refs`. `packbox-gc` solo borra chunks sin referencias.
+- **Sin setuid, sin root**: Todo corre como el usuario. `sudo` solo en la instalación.
+- **SafeLink**: Hardlinks con fallback automático a copia segura.
+
+### Limitaciones Conocidas (v0.1.0 Alpha)
 
 > [!WARNING]
-> Los archivos `.pbox` **no están firmados** en v0.1.0 Alpha. Trata cualquier
-> archivo importado como no confiable. La verificación de firmas está en la
-> hoja de ruta.
-
-Mitigaciones ya implementadas:
-
-- **Protección anti path-traversal** — `cas.isValidHash()` exige 64 chars
-  hex lowercase. La importación `.pbox` valida cada entrada tar contra la
-  raíz de extracción vía `security.ValidatePath`.
-- **Importación segura ante symlinks** — solo se manejan `tar.TypeDir` y
-  `tar.TypeReg`; symlinks, hardlinks y device files se saltan silenciosamente.
-- **Limpieza de entorno** — `--clearenv` seguido de whitelist explícita
-  bloquea inyección de `LD_PRELOAD` / `LD_LIBRARY_PATH` desde el host.
-- **Aislamiento de XAUTHORITY** — el `~/.Xauthority` del host se copia a un
-  archivo temporal por proceso (`/tmp/packbox-xauth-<pid>`, modo 0600) antes
-  de bindearse al sandbox.
-- **Reference counting** — cada chunk tiene un archivo `.refs`;
-  `packbox-gc` solo borra chunks no referenciados.
-- **Sin setuid, sin root** — Packbox corre enteramente como el usuario que
-  lo invoca. `sudo` solo lo usa el instalador para paquetes de la distro.
-
-Limitaciones conocidas y modelo de amenazas:
-[`docs/es/security.md`](docs/es/security.md) ·
-[`docs/en/security.md`](docs/en/security.md)
-
-Reporta vulnerabilidades con la salida de `packbox-diagnose` adjunta. Para
-hallazgos sensibles, usa el contacto privado de seguridad del repositorio.
+> - ❌ No hay verificación de firmas criptográficas en archivos `.pbox`.
+> - ❌ La política de red es global (`--share-net`).
+> - ❌ El sandbox es más permisivo que Flatpak (monta más directorios para GUI).
 
 ---
 
-## Hoja de ruta
+## 🗺️ Hoja de Ruta
 
 ### v0.1.x — Estabilización
-- [ ] Verificación de firmas para archivos `.pbox`
-- [ ] Política de red por app (actualmente `--share-net` es global)
-- [ ] Implementar `packbox-module remove` e `info`
-- [ ] Probar `host_contract.delegate` contra apps reales GTK4/Qt6
-- [ ] CI: `shellcheck`, `gofmt`, `go vet` en cada PR
-- [ ] Matriz de tests: Debian 12, Fedora 40, Arch, openSUSE Tumbleweed
+
+- [ ] Verificación de firmas para `.pbox` (minisign/sigstore)
+- [ ] Política de red por aplicación
+- [ ] Completar `packbox-module remove` e `info`
+- [ ] Tests de integración GTK4/Qt6
+- [ ] CI/CD: `shellcheck`, `gofmt`, `go vet`
+- [ ] Matriz: Debian 12, Fedora 40, Arch, openSUSE
 
 ### v0.2 — Alcance
-- [ ] Binarios precompilados para x86_64 y aarch64 (página de releases)
-- [ ] `packbox-update` para subir versiones in-place
-- [ ] Frontend GUI (opcional, GTK4)
-- [ ] Descargas delta a nivel de chunk para `packbox-export`
 
-### Más adelante
-- [ ] Importador de runtimes Flatpak (best-effort)
-- [ ] Verificación de firmas vía minisign o sigstore
-- [ ] Sandbox WASM opcional para plugins no confiables
+- [ ] Binarios precompilados x86_64 y aarch64
+- [ ] Comando `packbox-update`
+- [ ] Descargas delta a nivel de chunk
+- [ ] Frontend GUI opcional (GTK4)
 
----
+### Futuro
 
-## Documentación
-
-Documentación completa en 9 idiomas. Inglés y español tienen el set completo
-(README + comandos + arquitectura + seguridad); los otros siete tienen
-README + comandos.
-
-| Idioma   | README                                 | Comandos                                       | Arquitectura                                        | Seguridad                                     |
-|----------|----------------------------------------|------------------------------------------------|-----------------------------------------------------|-----------------------------------------------|
-| English  | [en](docs/en/README.md)                | [en](docs/en/commands.md)                      | [en](docs/en/architecture.md)                       | [en](docs/en/security.md)                     |
-| Español  | [es](docs/es/README.md)                | [es](docs/es/commands.md)                      | [es](docs/es/architecture.md)                       | [es](docs/es/security.md)                     |
-| Français | [fr](docs/fr/README.md)                | [fr](docs/fr/commands.md)                      | —                                                   | —                                             |
-| Deutsch  | [de](docs/de/README.md)                | [de](docs/de/commands.md)                      | —                                                   | —                                             |
-| Italiano | [it](docs/it/README.md)                | [it](docs/it/commands.md)                      | —                                                   | —                                             |
-| 简体中文 | [zh-CN](docs/zh-CN/README.md)          | [zh-CN](docs/zh-CN/commands.md)                | —                                                   | —                                             |
-| 繁體中文 | [zh-TW](docs/zh-TW/README.md)          | [zh-TW](docs/zh-TW/commands.md)                | —                                                   | —                                             |
-| 日本語   | [ja](docs/ja/README.md)                | [ja](docs/ja/commands.md)                      | —                                                   | —                                             |
-| 한국어   | [ko](docs/ko/README.md)                | [ko](docs/ko/commands.md)                      | —                                                   | —                                             |
-
-Índice: [`docs/README.md`](docs/README.md)
+- [ ] Importador de runtimes Flatpak
+- [ ] Sandbox WASM para plugins
+- [ ] Repositorio central de módulos
 
 ---
 
-## Contribuir
+## 🤝 Contribuir
 
-Contribuciones bienvenidas, especialmente:
+¡Contribuciones bienvenidas! Áreas de ayuda:
 
-- **Traducciones** — añade un nuevo locale a `packbox-i18n.sh` copiando el
-  bloque `en` de `install_lang_files()` y traduciendo cada clave `L_*`.
-- **Perfiles de sandbox** — mapas de datos por app para navegadores, IDEs,
-  juegos.
-- **Estrategias de chunking del CAS** — variantes de rolling hash, chunking
-  paralelo.
-- **Reportes de bugs** — incluye siempre la salida de `packbox-diagnose`.
+- **Traducciones**: Añade un locale a `packbox-i18n.sh` copiando el bloque base.
+- **Perfiles de sandbox**: Mejora los mapas de datos en `internal/sandbox/sandbox.go`.
+- **Chunking**: Investiga rolling hash o chunking paralelo para el CAS.
+- **Bugs**: Incluye siempre la salida de `packbox-diagnose`.
 
-Cómo empezar:
+### Cómo Empezar
 
 ```bash
 git clone https://github.com/TU_USUARIO/packbox.git
 cd packbox
-# Lee CONTRIBUTING.md para las guías completas
+# Lee CONTRIBUTING.md
 ```
 
 - 🐛 [Abrir un issue](https://github.com/TU_USUARIO/packbox/issues)
 - 💬 [Iniciar una discusión](https://github.com/TU_USUARIO/packbox/discussions)
 - 🔧 [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Por favor corre `shellcheck` sobre los scripts shell y `gofmt` + `go vet`
-sobre el código Go antes de enviar un PR.
+> [!TIP]
+> Ejecuta `shellcheck` sobre scripts bash y `gofmt` + `go vet` sobre Go antes de enviar un PR.
 
 ---
 
-## Licencia
+## ⚖️ Licencia
 
-[MIT](LICENSE) © 2025 TU_NOMBRE
+Distribuido bajo la **Licencia Apache 2.0**. Ver [LICENSE](LICENSE).
 
-Packbox es libre de usar, modificar y redistribuir. Ver [LICENSE](LICENSE)
-para detalles.
+Elegimos Apache 2.0 sobre MIT para proporcionar una cláusula de concesión de patentes explícita, protegiendo a usuarios y contribuyentes de litigios relacionados con las características de deduplicación y sandboxing de Packbox.
 
 ---
 
-## Agradecimientos
+## 🙏 Agradecimientos
 
-- **[bubblewrap](https://github.com/containers/bubblewrap)** — la primitiva
-  de sandbox que hace posible `packbox-run`.
-- **[BLAKE3](https://github.com/BLAKE3-team/BLAKE3)** — content-addressing
-  rápido y seguro.
-- **[Flatpak](https://flatpak.org/)** — el proyecto que demostró que las apps
-  Linux sandboxeadas funcionan a escala, y cuyas decisiones de diseño
-  informaron muchas de las nuestras (incluso donde divergimos).
-- La capa i18n de 9 idiomas existe porque la comunidad Linux es global;
-  gracias a todos los que han revisado las traducciones.
+- **[bubblewrap](https://github.com/containers/bubblewrap)**: Sandbox para Linux.
+- **[BLAKE3](https://github.com/BLAKE3-team/BLAKE3)**: Hashing de contenido rápido y seguro.
+- **[Flatpak](https://flatpak.org/)**: Demostró que las apps Linux sandboxeadas funcionan a escala.
+- **Comunidad Linux global**: La capa i18n de 9 idiomas existe gracias a sus revisiones.
+
+---
+
+<div align="center">
+
+**🚀 Packbox v0.1.0 Alpha — Empaquetamiento inteligente para Linux**
+
+*Hecho con ❤️ para la comunidad Linux*
+
+</div>
