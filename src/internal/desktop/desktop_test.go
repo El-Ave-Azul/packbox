@@ -11,15 +11,24 @@ import (
 	"github.com/packbox/packbox/internal/manifest"
 )
 
-func TestCreateSkipsNonGUI(t *testing.T) {
+func TestCreateCLIWritesTerminalEntry(t *testing.T) {
 	home := t.TempDir()
-	m := &manifest.Manifest{Name: "cli-app", GUI: false}
+	m := &manifest.Manifest{Name: "cli-app", Description: "CLI tool", GUI: false}
 	created, err := Create(home, m)
-	if err != nil || created {
-		t.Fatalf("Create(non-GUI) = %v, %v; want false, nil", created, err)
+	if err != nil || !created {
+		t.Fatalf("Create(cli) = %v, %v; want true, nil", created, err)
 	}
-	if _, err := os.Stat(DesktopPath(home, "cli-app")); err == nil {
-		t.Fatal("desktop file created for non-GUI app")
+	data, err := os.ReadFile(DesktopPath(home, "cli-app"))
+	if err != nil {
+		t.Fatalf("no .desktop written for a CLI app: %v", err)
+	}
+	for _, want := range []string{"Terminal=true", "Icon=utilities-terminal", "Categories=Utility;"} {
+		if !strings.Contains(string(data), want) {
+			t.Fatalf("CLI entry missing %q\n---\n%s", want, data)
+		}
+	}
+	if strings.Contains(string(data), "StartupWMClass=") {
+		t.Fatalf("CLI entry should not set StartupWMClass:\n%s", data)
 	}
 }
 
@@ -53,6 +62,7 @@ func TestCreateGUIFindsIconAndWritesEntry(t *testing.T) {
 		"Name=org.example.App",
 		"Exec=" + runBin + " " + m.Name,
 		"Icon=packbox-" + m.Name,
+		"Terminal=false",
 		"StartupWMClass=" + m.Name,
 		"Keywords=packbox;" + m.Name + ";",
 		"X-Packbox-Version=1.2.3",

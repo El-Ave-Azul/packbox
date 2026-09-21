@@ -126,6 +126,16 @@ out="$("$BIN/packbox-run" demo 2>&1 || true)"
 echo "$out" | grep -q LIBS_OK || fail "run (signed) did not see the lib: $out"
 pass "signature chain OK (verify + tamper refused + import + run)"
 
+step "import menu picks an export by number (no path typing)"
+rm -rf "$APPS/demo"
+menu=$( { echo 5; echo 1; for _ in 1 2 3; do echo; done; echo 0; } \
+    | TERM=xterm timeout 90 "$ROOT/packbox-packager.sh" 2>&1 \
+    | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g' )
+echo "$menu" | grep -q 'demo.pbox' || fail "import menu did not list the export"
+echo "$menu" | grep -qiE 'imported|importado' || fail "import menu did not import the picked export"
+[ -d "$APPS/demo" ] || fail "import menu did not create the app"
+pass "import menu lists exports and imports by number"
+
 step "packager frontend loads"
 printf '0\n' | TERM=xterm timeout 60 "$ROOT/packbox-packager.sh" >/dev/null 2>&1 \
     || fail "packager did not exit cleanly"

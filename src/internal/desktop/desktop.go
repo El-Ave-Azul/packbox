@@ -45,12 +45,14 @@ func DesktopPath(home, appID string) string {
 
 // ─── Create ─────────────────────────────────────────────────────────────────
 
-// Create writes a .desktop entry for a GUI app and copies its icon.
-// It is a no-op returning (false, nil) for non-GUI apps.
-// Create escribe una entrada .desktop para una app GUI y copia su icono.
-// No hace nada, devolviendo (false, nil), para apps no-GUI.
+// Create writes a .desktop entry for an app and copies its icon, so it can be
+// launched from the system menu. GUI apps run without a terminal; CLI apps run
+// in one (Terminal=true). It returns (false, nil) only for a nil manifest.
+// Create escribe una entrada .desktop para una app y copia su icono, para poder
+// lanzarla desde el menú del sistema. Las apps GUI se ejecutan sin terminal; las
+// CLI en una (Terminal=true). Devuelve (false, nil) solo si el manifiesto es nil.
 func Create(home string, m *manifest.Manifest) (bool, error) {
-	if m == nil || !m.GUI {
+	if m == nil {
 		return false, nil
 	}
 	appID := m.Name
@@ -62,11 +64,25 @@ func Create(home string, m *manifest.Manifest) (bool, error) {
 	}
 
 	iconRef := "application-x-executable"
+	if !m.GUI {
+		iconRef = "utilities-terminal"
+	}
 	if src, ext := findIcon(home, m); src != "" {
 		tgt := filepath.Join(iconsDir(home), "packbox-"+appID+ext)
 		if err := copyFile(src, tgt); err == nil {
 			iconRef = "packbox-" + appID
 		}
+	}
+
+	// CLI apps open in a terminal; GUI apps don't. WM class only matters for GUI.
+	// Las apps CLI se abren en una terminal; las GUI no. WM class solo para GUI.
+	terminal := "false"
+	cats := categories(appID)
+	wmclass := "StartupWMClass=" + appID + "\n"
+	if !m.GUI {
+		terminal = "true"
+		cats = "Utility;"
+		wmclass = ""
 	}
 
 	content := fmt.Sprintf(`[Desktop Entry]
@@ -77,16 +93,15 @@ Comment=%s
 Exec=%s %s
 TryExec=%s
 Icon=%s
-Terminal=false
+Terminal=%s
 StartupNotify=true
-StartupWMClass=%s
-Categories=%s
+%sCategories=%s
 Keywords=packbox;%s;
 X-Packbox-ID=%s
 X-Packbox-Version=%s
 X-Packbox-Toolkit=%s
 `, sanitize(m.Name), sanitize(m.Description), runBin(home), appID, runBin(home),
-		iconRef, appID, categories(appID), appID, appID, sanitize(m.Version), sanitize(m.Toolkit))
+		iconRef, terminal, wmclass, cats, appID, appID, sanitize(m.Version), sanitize(m.Toolkit))
 
 	df := DesktopPath(home, appID)
 	if err := os.WriteFile(df, []byte(content), 0644); err != nil {
