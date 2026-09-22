@@ -69,6 +69,13 @@ ask_yn() {
     fi
     printf "  ${Y}?${N} %s" "$p"
     read -r -n 1 r
+    # If a character was typed, its trailing Enter is still buffered; consume
+    # just that newline so the next line-read isn't desynced. On a bare Enter
+    # `read -n 1` already consumed it, so there is nothing to drain.
+    # Si se tecleó un carácter, su Enter sigue en el buffer; consume solo ese
+    # salto de línea para que el siguiente read de línea no se desincronice.
+    # Con un Enter solo, `read -n 1` ya lo consumió: no hay nada que drenar.
+    [[ -n "$r" ]] && IFS= read -r -t 0.01 _ 2>/dev/null || true
     echo
     [[ -z "$r" ]] && r="$d"
     [[ "$r" =~ ^[SsYy]$ ]]

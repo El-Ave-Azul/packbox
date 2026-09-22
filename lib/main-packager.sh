@@ -142,7 +142,7 @@ menu_pack() {
         echo ""
         echo -e "  ${BD}$(t L_APP_ID): $CURRENT_APP_ID  |  $(t L_VERSION): $CURRENT_VERSION${N}"
         echo -e "  ${BD}$(_tt L_NETWORK "Red"): $CURRENT_NETWORK${N}"
-        ask_yn "$(t L_CONFIRM)" "s" || continue
+        ask_yn "$(_tt L_PACK_THIS "¿Empaquetar $CURRENT_APP_ID ahora?")" "s" || continue
         package_real
 
         # Ofrecer export
@@ -186,7 +186,7 @@ run_gc() {
 # ─── Opción 6: desinstalar apps ─────────────────────────────────────────────
 uninstall_apps() {
     hdr "$(t L_6_UNINSTALL)"
-    [[ ! -x "$PACKBOX_BIN_REMOVE" ]] && err "packbox-remove not found"
+    [[ ! -x "$PACKBOX_BIN_REMOVE" ]] && { fail "packbox-remove not found"; return 1; }
 
     if [[ ! -d "$PACKBOX_APPS_DIR" || -z "$(ls -A "$PACKBOX_APPS_DIR" 2>/dev/null)" ]]; then
         warn "$(t L_NO_RESULTS)"
@@ -243,6 +243,18 @@ uninstall_apps() {
         done
     fi
     [[ ${#idxs[@]} -eq 0 ]] && { warn "$(t L_NO_SELECTION)"; return 1; }
+
+    # Deduplica (evita intentar borrar la misma app dos veces con "1 1" o
+    # rangos solapados como "1-3 2").
+    # Deduplicate (avoids removing the same app twice with "1 1" or
+    # overlapping ranges like "1-3 2").
+    local -a uidx=()
+    for idx in "${idxs[@]}"; do
+        local dup=0 y
+        for y in "${uidx[@]}"; do [[ "$y" == "$idx" ]] && { dup=1; break; }; done
+        (( dup == 0 )) && uidx+=("$idx")
+    done
+    idxs=("${uidx[@]}")
 
     echo ""
     local stot=0 idx

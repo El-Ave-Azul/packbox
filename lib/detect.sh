@@ -519,7 +519,7 @@ fld() { echo "$1" | awk -F'|' -v i="$2" '{print $i}'; }
 # ─── Top apps by size ───────────────────────────────────────────────────────
 select_top() {
     local limit="${1:-15}" minb="${2:-0}"
-    [[ ${#APPS_SORTED[@]} -eq 0 ]] && err "$(t L_NO_RESULTS)"
+    [[ ${#APPS_SORTED[@]} -eq 0 ]] && { fail "$(t L_NO_RESULTS)"; return 1; }
     hdr "$(t L_TOP)"
 
     local cand=() b

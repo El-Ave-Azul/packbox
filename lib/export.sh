@@ -76,7 +76,7 @@ export_app() {
             [[ -f "$ef.sig" ]] && det "Signature: $ef.sig"
         fi
     else
-        err "Export failed / Export falló"
+        { fail "Export failed / Export falló"; return 1; }
     fi
     read -rp "  ENTER..."
 }

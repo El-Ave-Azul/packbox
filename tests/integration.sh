@@ -136,6 +136,34 @@ echo "$menu" | grep -qiE 'imported|importado' || fail "import menu did not impor
 [ -d "$APPS/demo" ] || fail "import menu did not create the app"
 pass "import menu lists exports and imports by number"
 
+step "ask_yn keeps the next line-read in sync (no Enter leak)"
+ync=$( { . "$ROOT/lib/ui.sh"; . "$ROOT/lib/common.sh"
+    printf 'n\n2\n' | { ask_yn "test" "s"; echo "rc=$?"; read -r v; echo "next=[$v]"; }
+} 2>&1 )
+echo "$ync" | grep -q 'rc=1' || fail "ask_yn('n') should return 1: $ync"
+echo "$ync" | grep -q 'next=\[2\]' || fail "ask_yn left the input buffer desynced: $ync"
+pass "ask_yn('n') → the next read got '2'"
+
+if command -v btop >/dev/null 2>&1; then
+    step "network flow: answering 'no' still packages"
+    rm -rf "$APPS/btop"
+    flow=$( { echo 1; echo b; echo btop; echo 1
+              echo; echo; echo; echo
+              echo n; echo 2
+              echo; echo; echo; echo; echo
+              echo 0
+            } | TERM=xterm timeout 240 "$ROOT/packbox-packager.sh" 2>&1 \
+              | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g' )
+    echo "$flow" | grep -q 'Network access: false' \
+        || fail "'no' to the network question was not honoured"
+    echo "$flow" | grep -qiE 'installed|instalado' \
+        || fail "packaging did not complete after answering 'no'"
+    [ -d "$APPS/btop" ] || fail "the app was not installed"
+    pass "answered 'no' to network → packaged"
+else
+    printf '  \033[33mskip\033[0m network flow (no btop to package)\n'
+fi
+
 step "packager frontend loads"
 printf '0\n' | TERM=xterm timeout 60 "$ROOT/packbox-packager.sh" >/dev/null 2>&1 \
     || fail "packager did not exit cleanly"

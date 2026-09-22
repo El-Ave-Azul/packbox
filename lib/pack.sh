@@ -96,7 +96,7 @@ pack_normal() {
     hdr "$(t L_PACKING) $(t L_NORMAL)"
     local inf="$CURRENT_INFO" p
     p=$(fld "$inf" 2)
-    [[ -z "$CURRENT_APP_ID" ]] && err "App ID required"
+    [[ -z "$CURRENT_APP_ID" ]] && { fail "App ID required"; return 1; }
     local wd
     wd=$(tmpdir "real")
     reg_cln "$wd"
@@ -128,11 +128,11 @@ pack_normal() {
     else
         ep="/app/bin/$bn"
     fi
-    invoke_pack "$wd" "$CURRENT_APP_ID" "$ep" || err "pack failed"
-    jq empty "$wd/manifest.json" 2>/dev/null || err "invalid JSON"
-    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || err "install failed"
+    invoke_pack "$wd" "$CURRENT_APP_ID" "$ep" || { fail "pack failed"; return 1; }
+    jq empty "$wd/manifest.json" 2>/dev/null || { fail "invalid JSON"; return 1; }
+    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
     local ad="$PACKBOX_APPS_DIR/$CURRENT_APP_ID"
-    [[ -d "$ad/tree" ]] || err "no tree/"
+    [[ -d "$ad/tree" ]] || { fail "no tree/"; return 1; }
     box_ok "$CURRENT_APP_ID  $(t L_INSTALLED)"
     maybe_desktop
     ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$CURRENT_APP_ID"; }
@@ -146,7 +146,7 @@ pack_portable() {
     hdr "$(t L_PACKING) $(t L_PORTABLE)"
     local inf="$CURRENT_INFO" p
     p=$(fld "$inf" 2)
-    [[ -z "$CURRENT_APP_ID" ]] && err "App ID required"
+    [[ -z "$CURRENT_APP_ID" ]] && { fail "App ID required"; return 1; }
     local wd
     wd=$(tmpdir "portable")
     reg_cln "$wd"
@@ -187,10 +187,10 @@ pack_portable() {
     else
         ep="/app/bin/$bn"
     fi
-    invoke_pack "$wd" "$CURRENT_APP_ID" "$ep" || err "pack failed"
-    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || err "install failed"
+    invoke_pack "$wd" "$CURRENT_APP_ID" "$ep" || { fail "pack failed"; return 1; }
+    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
     local ad="$PACKBOX_APPS_DIR/$CURRENT_APP_ID"
-    [[ -d "$ad/tree" ]] || err "no tree/"
+    [[ -d "$ad/tree" ]] || { fail "no tree/"; return 1; }
     local tm
     tm=$(mktemp)
     jq '. + {"portable": true, "portable_libs_count": '"$lb"'}' "$ad/manifest.json" > "$tm"
@@ -209,8 +209,8 @@ pack_bundle() {
     hdr "$(t L_PACKING) $(t L_BUNDLE)"
     local inf="$CURRENT_INFO" p s bd
     p=$(fld "$inf" 2); s=$(fld "$inf" 4); bd=$(fld "$inf" 9)
-    [[ -z "$bd" || ! -d "$bd" ]] && err "no bundle_dir"
-    [[ -z "$CURRENT_APP_ID" ]] && err "App ID required"
+    [[ -z "$bd" || ! -d "$bd" ]] && { fail "no bundle_dir"; return 1; }
+    [[ -z "$CURRENT_APP_ID" ]] && { fail "App ID required"; return 1; }
     local wd
     wd=$(tmpdir "bundle")
     reg_cln "$wd"
@@ -224,7 +224,7 @@ pack_bundle() {
     elif cp -a --no-preserve=ownership "$bd/." "$wd/bundle/" 2>/dev/null; then
         det "Real copy (cross-FS)"
     else
-        err "Bundle copy failed ($bd → $wd/bundle)"
+        { fail "Bundle copy failed ($bd → $wd/bundle)"; return 1; }
     fi
 
     local br=""
@@ -235,8 +235,8 @@ pack_bundle() {
         [[ -e "$wd/bundle/$cand" ]] && br="$cand"
     fi
     [[ -z "$br" ]] && br=$(find_bin_in_bundle "$p" "$wd/bundle")
-    [[ -z "$br" ]] && err "no binary in bundle"
-    [[ ! -e "$wd/bundle/$br" ]] && err "missing: $br"
+    [[ -z "$br" ]] && { fail "no binary in bundle"; return 1; }
+    [[ ! -e "$wd/bundle/$br" ]] && { fail "missing: $br"; return 1; }
     [[ -f "$wd/bundle/$br" && ! -x "$wd/bundle/$br" ]] && chmod +x "$wd/bundle/$br"
     ok "Binary: bundle/$br"
 
@@ -251,10 +251,10 @@ exec "\$BUNDLE_DIR/$br" "\$@"
 LAUNCHER_EOF
     chmod +x "$wd/bin/launcher.sh"
 
-    invoke_pack "$wd" "$CURRENT_APP_ID" "/app/bin/launcher.sh" || err "pack failed"
-    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || err "install failed"
+    invoke_pack "$wd" "$CURRENT_APP_ID" "/app/bin/launcher.sh" || { fail "pack failed"; return 1; }
+    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
     local ad="$PACKBOX_APPS_DIR/$CURRENT_APP_ID"
-    [[ -d "$ad/tree" ]] || err "no tree/"
+    [[ -d "$ad/tree" ]] || { fail "no tree/"; return 1; }
     local tm
     tm=$(mktemp)
     jq '. + {"portable": true, "bundle": true, "bundle_dir": "'"$bd"'", "bundle_bin_rel": "'"$br"'"}' \
@@ -275,7 +275,7 @@ pack_module() {
     hdr "$(t L_MODULE)"
     local inf="$CURRENT_INFO" p tk
     p=$(fld "$inf" 2); tk=$(fld "$inf" 8)
-    [[ ! -x "$PACKBOX_BIN_MODULE" ]] && err "packbox-module not found"
+    [[ ! -x "$PACKBOX_BIN_MODULE" ]] && { fail "packbox-module not found"; return 1; }
     echo -en "  ${BD}Name: ${N}"
     local mn
     read -r mn

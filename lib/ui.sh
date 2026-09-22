@@ -59,6 +59,15 @@ err() {
     exit 1
 }
 
+# fail — imprime error y devuelve 1, SIN salir. Para el flujo interactivo
+# (un fallo al empaquetar/desinstalar debe volver al menú, no matar el packager).
+# fail — prints an error and returns 1, WITHOUT exiting. For the interactive
+# flow (a pack/uninstall failure must return to the menu, not kill the packager).
+fail() {
+    echo -e "  ${R}${XMK}${N}  ${BD}${1:-error}${N}"
+    return 1
+}
+
 # ─── Encabezados ─────────────────────────────────────────────────────────────
 # ─── Headers ─────────────────────────────────────────────────────────────────
 hdr() {
