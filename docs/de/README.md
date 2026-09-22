@@ -5,7 +5,7 @@
 ---
 
 ![Lizenz](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
-![Version](https://img.shields.io/badge/Versión-0.1.1-orange.svg)
+![Version](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Plattform](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)
@@ -19,7 +19,7 @@ inhaltsadressierten Speicher (BLAKE3 CAS), mit **inhaltsdefiniertem Chunking
 Bibliotheken teilen, speichern nur die 10 %, die abweichen.
 
 > [!WARNING]
-> **Alpha-Status (v0.1.1).** Die Hauptabläufe funktionieren, und es gibt bereits
+> **Alpha-Status (v0.2.0).** Die Hauptabläufe funktionieren, und es gibt bereits
 > Signaturen, verstärkten Sandbox (seccomp, gefiltertes D-Bus, privates HOME) und
 > HTTP-Remote, aber das Projekt ist jung und hat weder das Ökosystem noch die
 > Reife von Flatpak. Nutze es zunächst auf unkritischen Systemen.
@@ -80,7 +80,7 @@ universellen Bibliotheken (`libc`, `libm`, …) dem Host.
 
 ## Vergleich mit Flatpak
 
-| Merkmal              | Flatpak (aktuell)           | Packbox v0.1.1                       |
+| Merkmal              | Flatpak (aktuell)           | Packbox v0.2.0                       |
 |----------------------|-----------------------------|--------------------------------------|
 | Wiederverwendungseinheit | Vollständige Runtime (~1 GB) | **Zellen** pro Lib (ohne Runtimes) |
 | Deduplizierung       | Auf Dateiebene (OSTree)     | Auf **Chunk**-Ebene (BLAKE3 + CDC)   |
@@ -230,7 +230,7 @@ packbox-import app org.ejemplo.miapp.pbox
 
 ## Verfügbare Befehle
 
-Packbox v0.1.1 enthält **15 Go-Binärdateien** in `~/.packbox/bin/`:
+Packbox v0.2.0 enthält **15 Go-Binärdateien** in `~/.packbox/bin/`:
 
 | Befehl             | Zweck                                                              |
 |--------------------|--------------------------------------------------------------------|
@@ -365,7 +365,7 @@ Gesamt: 6 eindeutige Chunks statt 9.
 - **CAS-Integrität** — Hashes werden vor der Verwendung als Pfad validiert;
   atomare Schreibvorgänge.
 
-### Bekannte Einschränkungen (v0.1.1 Alpha)
+### Bekannte Einschränkungen (v0.2.0 Alpha)
 
 > [!WARNING]
 > Bereiche, für die Feedback am meisten geschätzt wird.

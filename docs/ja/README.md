@@ -5,7 +5,7 @@
 ---
 
 ![Licencia](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
-![Versión](https://img.shields.io/badge/Versión-0.1.1-orange.svg)
+![Versión](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Plataforma](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)
@@ -19,7 +19,7 @@ Flatpak に着想を得ていますが、再利用のモデルは異なります
 2 つのアプリは、差分である 10 % だけを保存します。
 
 > [!WARNING]
-> **アルファ状態（v0.1.1）。** 主要なフローは動作しており、署名、強化された
+> **アルファ状態（v0.2.0）。** 主要なフローは動作しており、署名、強化された
 > サンドボックス（seccomp、フィルタ済み D-Bus、プライベート HOME）、HTTP
 > リモートもすでにありますが、プロジェクトは若く、Flatpak のようなエコシステム
 > や成熟度はありません。まずは重要でないシステムで使用してください。
@@ -80,7 +80,7 @@ Packbox は各ファイルをコンテンツでアドレス指定されたチャ
 
 ## Flatpak との比較
 
-| 特徴                 | Flatpak（現状）             | Packbox v0.1.1                       |
+| 特徴                 | Flatpak（現状）             | Packbox v0.2.0                       |
 |----------------------|-----------------------------|--------------------------------------|
 | 再利用の単位         | 完全なランタイム（約 1 GB） | lib ごとの **セル**（ランタイムなし）|
 | 重複排除             | ファイルレベル（OSTree）    | **チャンク**レベル（BLAKE3 + CDC）   |
@@ -228,7 +228,7 @@ packbox-import app org.ejemplo.miapp.pbox
 
 ## 利用可能なコマンド
 
-Packbox v0.1.1 には `~/.packbox/bin/` に **15 個の Go バイナリ** が含まれています:
+Packbox v0.2.0 には `~/.packbox/bin/` に **15 個の Go バイナリ** が含まれています:
 
 | コマンド           | 目的                                                          |
 |--------------------|--------------------------------------------------------------------|
@@ -363,7 +363,7 @@ Total: 6 chunks únicos en lugar de 9.
 - **CAS の整合性** — ハッシュはパスとして使用される前に検証されます。
   書き込みはアトミックです。
 
-### 既知の制限（v0.1.1 Alpha）
+### 既知の制限（v0.2.0 Alpha）
 
 > [!WARNING]
 > フィードバックを最も歓迎する領域です。

@@ -14,7 +14,7 @@
 # Single source: src/internal/version/VERSION (the same file the Go package
 # `internal/version` embeds). Do not hardcode the version elsewhere.
 PACKBOX_VERSION="$(cat "${PACKBOX_ROOT:-.}/src/internal/version/VERSION" 2>/dev/null | tr -d '[:space:]')"
-[[ -n "$PACKBOX_VERSION" ]] || PACKBOX_VERSION="0.1.1"
+[[ -n "$PACKBOX_VERSION" ]] || PACKBOX_VERSION="0.2.0"
 
 # ─── Directorio de instalación (oculto) ──────────────────────────────────────
 # ─── Installation directory (hidden) ─────────────────────────────────────────

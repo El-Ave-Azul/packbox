@@ -5,7 +5,7 @@
 ---
 
 ![Licence](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
-![Version](https://img.shields.io/badge/Versión-0.1.1-orange.svg)
+![Version](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Plateforme](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)
@@ -19,7 +19,7 @@ adressé par contenu (BLAKE3 CAS), avec un **chunking défini par le contenu
 leurs bibliothèques ne stockent que les 10 % qui diffèrent.
 
 > [!WARNING]
-> **État Alpha (v0.1.1).** Les flux principaux fonctionnent et il existe déjà des
+> **État Alpha (v0.2.0).** Les flux principaux fonctionnent et il existe déjà des
 > signatures, un sandbox renforcé (seccomp, D-Bus filtré, HOME privé) et un
 > remote HTTP, mais le projet est jeune et n'a ni l'écosystème ni la maturité de
 > Flatpak. Utilisez-le d'abord sur des systèmes non critiques.
@@ -80,7 +80,7 @@ partagent, et laisse les bibliothèques universelles (`libc`, `libm`, …) à l'
 
 ## Comparaison avec Flatpak
 
-| Caractéristique          | Flatpak (actuel)            | Packbox v0.1.1                       |
+| Caractéristique          | Flatpak (actuel)            | Packbox v0.2.0                       |
 |--------------------------|-----------------------------|--------------------------------------|
 | Unité de réutilisation   | Runtime complet (~1 GB)     | **Cellules** par lib (sans runtimes) |
 | Déduplication            | Au niveau du fichier (OSTree) | Au niveau du **chunk** (BLAKE3 + CDC) |
@@ -230,7 +230,7 @@ packbox-import app org.ejemplo.miapp.pbox
 
 ## Commandes disponibles
 
-Packbox v0.1.1 inclut **15 binaires Go** dans `~/.packbox/bin/` :
+Packbox v0.2.0 inclut **15 binaires Go** dans `~/.packbox/bin/` :
 
 | Commande           | Objectif                                                          |
 |--------------------|--------------------------------------------------------------------|
@@ -366,7 +366,7 @@ Total: 6 chunks uniques au lieu de 9.
 - **Intégrité du CAS** — Hashes validés avant d'être utilisés comme chemin ;
   écritures atomiques.
 
-### Limitations connues (v0.1.1 Alpha)
+### Limitations connues (v0.2.0 Alpha)
 
 > [!WARNING]
 > Les domaines où vos retours sont les plus appréciés.

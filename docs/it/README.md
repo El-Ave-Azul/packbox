@@ -5,7 +5,7 @@
 ---
 
 ![Licenza](https://img.shields.io/badge/Licenza-Apache_2.0-blue.svg)
-![Versione](https://img.shields.io/badge/Versione-0.1.1-orange.svg)
+![Versione](https://img.shields.io/badge/Versione-0.2.0-orange.svg)
 ![Piattaforma](https://img.shields.io/badge/Piattaforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_lingue-green.svg)
@@ -19,7 +19,7 @@ indirizzato per contenuto (BLAKE3 CAS), con **chunking definito dal contenuto
 librerie memorizzano solo il 10 % che differisce.
 
 > [!WARNING]
-> **Stato Alpha (v0.1.1).** I flussi principali funzionano e ci sono già firme,
+> **Stato Alpha (v0.2.0).** I flussi principali funzionano e ci sono già firme,
 > sandbox rafforzata (seccomp, D-Bus filtrato, HOME privata) e remoto HTTP, ma
 > il progetto è giovane e non ha l'ecosistema né la maturità di Flatpak. Usalo
 > prima su sistemi non critici.
@@ -80,7 +80,7 @@ versionata) che varie app condividono, e lascia le librerie universali
 
 ## Confronto con Flatpak
 
-| Caratteristica       | Flatpak (attuale)           | Packbox v0.1.1                       |
+| Caratteristica       | Flatpak (attuale)           | Packbox v0.2.0                       |
 |----------------------|-----------------------------|--------------------------------------|
 | Unità di riuso       | Runtime completo (~1 GB)    | **Celle** per lib (senza runtime)    |
 | Deduplicazione       | A livello di file (OSTree)  | A livello di **chunk** (BLAKE3 + CDC) |
@@ -228,7 +228,7 @@ packbox-import app org.ejemplo.miapp.pbox
 
 ## Comandi disponibili
 
-Packbox v0.1.1 include **15 binari Go** in `~/.packbox/bin/`:
+Packbox v0.2.0 include **15 binari Go** in `~/.packbox/bin/`:
 
 | Comando            | Scopo                                                              |
 |--------------------|--------------------------------------------------------------------|
@@ -361,7 +361,7 @@ Totale: 6 chunk unici invece di 9.
 - **Integrità del CAS** — Hash validati prima di essere usati come percorso;
   scritture atomiche.
 
-### Limitazioni note (v0.1.1 Alpha)
+### Limitazioni note (v0.2.0 Alpha)
 
 > [!WARNING]
 > Aree in cui il feedback è più gradito.

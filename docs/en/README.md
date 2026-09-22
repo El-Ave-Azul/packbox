@@ -5,7 +5,7 @@
 ---
 
 ![License](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
-![Version](https://img.shields.io/badge/Versión-0.1.1-orange.svg)
+![Version](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Platform](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)
@@ -19,7 +19,7 @@ content-addressed store (BLAKE3 CAS), with **content-defined chunking
 libraries only store the 10% that differs.
 
 > [!WARNING]
-> **Alpha status (v0.1.1).** The main workflows work and there are already signatures,
+> **Alpha status (v0.2.0).** The main workflows work and there are already signatures,
 > hardened sandbox (seccomp, filtered D-Bus, private HOME) and HTTP remote, but
 > the project is young and does not have the ecosystem or the maturity of Flatpak. Use it
 > first on non-critical systems.
@@ -80,7 +80,7 @@ unit) that several apps share, and leaves the universal libraries
 
 ## Comparison with Flatpak
 
-| Feature               | Flatpak (current)           | Packbox v0.1.1                       |
+| Feature               | Flatpak (current)           | Packbox v0.2.0                       |
 |----------------------|-----------------------------|--------------------------------------|
 | Reuse unit           | Complete runtime (~1 GB)    | **Cells** per lib (no runtimes)      |
 | Deduplication        | File-level (OSTree)         | **Chunk**-level (BLAKE3 + CDC)       |
@@ -228,7 +228,7 @@ packbox-import app org.example.myapp.pbox
 
 ## Available commands
 
-Packbox v0.1.1 includes **15 Go binaries** in `~/.packbox/bin/`:
+Packbox v0.2.0 includes **15 Go binaries** in `~/.packbox/bin/`:
 
 | Command            | Purpose                                                            |
 |--------------------|--------------------------------------------------------------------|
@@ -361,7 +361,7 @@ Total: 6 unique chunks instead of 9.
 - **CAS integrity** — Hashes validated before being used as a path;
   atomic writes.
 
-### Known limitations (v0.1.1 Alpha)
+### Known limitations (v0.2.0 Alpha)
 
 > [!WARNING]
 > Areas where feedback is most appreciated.

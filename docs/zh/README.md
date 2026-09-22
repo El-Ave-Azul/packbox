@@ -5,7 +5,7 @@
 ---
 
 ![Licencia](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
-![Versión](https://img.shields.io/badge/Versión-0.1.1-orange.svg)
+![Versión](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Plataforma](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)
@@ -18,7 +18,7 @@ runtime，Packbox 将内容保存在一个按内容寻址的存储（BLAKE3 CAS�
 90 % 库的应用只存储这 10 % 的差异部分。
 
 > [!WARNING]
-> **Alpha 状态（v0.1.1）。** 主要流程可以工作，并且已经具备签名、
+> **Alpha 状态（v0.2.0）。** 主要流程可以工作，并且已经具备签名、
 > 强化的沙箱（seccomp、过滤的 D-Bus、私有 HOME）和 HTTP 远程仓库，但
 > 项目还很年轻，没有 Flatpak 那样的生态和成熟度。请先在非关键系统上
 > 使用。
@@ -73,7 +73,7 @@ Packbox 使用 **Content-Addressable Storage (CAS)**、**BLAKE3** 哈希和
 
 ## 与 Flatpak 的比较
 
-| 特性                 | Flatpak（当前）             | Packbox v0.1.1                       |
+| 特性                 | Flatpak（当前）             | Packbox v0.2.0                       |
 |----------------------|-----------------------------|--------------------------------------|
 | 复用单位             | 完整 runtime（约 1 GB）     | 按库的**单元**（无 runtime）         |
 | 去重                 | 文件级（OSTree）            | **块级**（BLAKE3 + CDC）             |
@@ -220,7 +220,7 @@ packbox-import app org.ejemplo.miapp.pbox
 
 ## 可用命令
 
-Packbox v0.1.1 在 `~/.packbox/bin/` 中包含 **15 个 Go 二进制文件**：
+Packbox v0.2.0 在 `~/.packbox/bin/` 中包含 **15 个 Go 二进制文件**：
 
 | 命令               | 用途                                                          |
 |--------------------|--------------------------------------------------------------------|
@@ -350,7 +350,7 @@ Total: 6 chunks únicos en lugar de 9.
   篡改或来自不受信任签名者的包。
 - **CAS 完整性** — 哈希在用作路径之前经过校验；写入是原子的。
 
-### 已知局限（v0.1.1 Alpha）
+### 已知局限（v0.2.0 Alpha）
 
 > [!WARNING]
 > 最欢迎反馈的几个方面。

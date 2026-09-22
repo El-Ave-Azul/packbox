@@ -5,7 +5,7 @@
 ---
 
 ![Licencia](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
-![Versión](https://img.shields.io/badge/Versión-0.1.1-orange.svg)
+![Versión](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Plataforma](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)
@@ -18,7 +18,7 @@ Flatpak에서 영감을 받았지만 재사용 모델은 다릅니다. 앱마다
 라이브러리의 90 %를 공유하는 두 앱은 서로 다른 10 %만 저장합니다.
 
 > [!WARNING]
-> **Alpha 상태 (v0.1.1).** 주요 흐름은 동작하며 서명, 강화된 샌드박스(seccomp, 필터링된 D-Bus, 전용 HOME), HTTP 원격 저장소도 이미 갖추고 있습니다. 그러나 이 프로젝트는 아직 신생이라 Flatpak 수준의 생태계나 성숙도를 갖추지 못했습니다. 먼저 중요하지 않은 시스템에서 사용하십시오.
+> **Alpha 상태 (v0.2.0).** 주요 흐름은 동작하며 서명, 강화된 샌드박스(seccomp, 필터링된 D-Bus, 전용 HOME), HTTP 원격 저장소도 이미 갖추고 있습니다. 그러나 이 프로젝트는 아직 신생이라 Flatpak 수준의 생태계나 성숙도를 갖추지 못했습니다. 먼저 중요하지 않은 시스템에서 사용하십시오.
 
 ---
 
@@ -68,7 +68,7 @@ Packbox는 **BLAKE3** 해싱과 **콘텐츠 기반 청킹** 을 사용하는 **C
 
 ## Flatpak과의 비교
 
-| 항목                 | Flatpak (현재)              | Packbox v0.1.1                       |
+| 항목                 | Flatpak (현재)              | Packbox v0.2.0                       |
 |----------------------|-----------------------------|--------------------------------------|
 | 재사용 단위          | 전체 런타임 (~1 GB)         | 라이브러리별 **셀** (런타임 없음)    |
 | 중복 제거            | 파일 수준 (OSTree)          | **청크** 수준 (BLAKE3 + CDC)         |
@@ -211,7 +211,7 @@ packbox-import app org.ejemplo.miapp.pbox
 
 ## 사용 가능한 명령어
 
-Packbox v0.1.1은 `~/.packbox/bin/`에 **15개의 Go 바이너리** 를 포함합니다:
+Packbox v0.2.0은 `~/.packbox/bin/`에 **15개의 Go 바이너리** 를 포함합니다:
 
 | 명령어             | 용도                                                          |
 |--------------------|--------------------------------------------------------------------|
@@ -345,7 +345,7 @@ Total: 6 chunks únicos en lugar de 9.
 - **CAS 무결성** — 해시는 경로로 사용되기 전에 검증되며,
   쓰기는 원자적입니다.
 
-### 알려진 한계 (v0.1.1 Alpha)
+### 알려진 한계 (v0.2.0 Alpha)
 
 > [!WARNING]
 > 가장 피드백을 환영하는 영역입니다.

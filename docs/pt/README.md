@@ -5,7 +5,7 @@
 ---
 
 ![Licença](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
-![Versão](https://img.shields.io/badge/Versión-0.1.1-orange.svg)
+![Versão](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Plataforma](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)
@@ -19,7 +19,7 @@ endereçado por conteúdo (BLAKE3 CAS), com **chunking definido por conteúdo
 bibliotecas armazenam apenas os 10 % que diferem.
 
 > [!WARNING]
-> **Estado Alpha (v0.1.1).** Os fluxos principais funcionam e já existem
+> **Estado Alpha (v0.2.0).** Os fluxos principais funcionam e já existem
 > assinaturas, sandbox reforçado (seccomp, D-Bus filtrado, HOME privado) e
 > remoto HTTP, mas o projeto é jovem e não tem o ecossistema nem a maturidade
 > do Flatpak. Use-o primeiro em sistemas não críticos.
@@ -80,7 +80,7 @@ universais (`libc`, `libm`, …) para o host.
 
 ## Comparação com o Flatpak
 
-| Característica        | Flatpak (atual)             | Packbox v0.1.1                       |
+| Característica        | Flatpak (atual)             | Packbox v0.2.0                       |
 |----------------------|-----------------------------|--------------------------------------|
 | Unidade de reuso      | Runtime completo (~1 GB)    | **Células** por lib (sem runtimes)   |
 | Deduplicação          | Em nível de arquivo (OSTree) | Em nível de **chunk** (BLAKE3 + CDC) |
@@ -228,7 +228,7 @@ packbox-import app org.ejemplo.miapp.pbox
 
 ## Comandos disponíveis
 
-O Packbox v0.1.1 inclui **15 binários Go** em `~/.packbox/bin/`:
+O Packbox v0.2.0 inclui **15 binários Go** em `~/.packbox/bin/`:
 
 | Comando            | Propósito                                                          |
 |--------------------|--------------------------------------------------------------------|
@@ -361,7 +361,7 @@ Total: 6 chunks únicos em vez de 9.
 - **Integridade do CAS** — Hashes validados antes de serem usados como rota;
   escritas atômicas.
 
-### Limitações conhecidas (v0.1.1 Alpha)
+### Limitações conhecidas (v0.2.0 Alpha)
 
 > [!WARNING]
 > Áreas onde mais feedback é bem-vindo.

@@ -5,7 +5,7 @@
 ---
 
 ![Licencia](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
-![Versión](https://img.shields.io/badge/Versión-0.1.1-orange.svg)
+![Versión](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Plataforma](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8.svg?logo=go&logoColor=white)
 ![i18n](https://img.shields.io/badge/i18n-9_idiomas-green.svg)
@@ -19,7 +19,7 @@ direccionado por contenido (BLAKE3 CAS), con **chunking definido por contenido
 librerías solo almacenan el 10 % que difiere.
 
 > [!WARNING]
-> **Estado Alpha (v0.1.1).** Los flujos principales funcionan y ya hay firmas,
+> **Estado Alpha (v0.2.0).** Los flujos principales funcionan y ya hay firmas,
 > sandbox reforzado (seccomp, D-Bus filtrado, HOME privado) y remoto HTTP, pero
 > el proyecto es joven y no tiene el ecosistema ni la madurez de Flatpak. Úsalo
 > primero en sistemas no críticos.
@@ -80,7 +80,7 @@ versionada) que varias apps comparten, y deja las librerías universales
 
 ## Comparación con Flatpak
 
-| Característica       | Flatpak (actual)            | Packbox v0.1.1                       |
+| Característica       | Flatpak (actual)            | Packbox v0.2.0                       |
 |----------------------|-----------------------------|--------------------------------------|
 | Unidad de reuso      | Runtime completo (~1 GB)    | **Celdas** por lib (sin runtimes)    |
 | Deduplicación        | A nivel de archivo (OSTree) | A nivel de **chunk** (BLAKE3 + CDC)  |
@@ -228,7 +228,7 @@ packbox-import app org.ejemplo.miapp.pbox
 
 ## Comandos disponibles
 
-Packbox v0.1.1 incluye **15 binarios Go** en `~/.packbox/bin/`:
+Packbox v0.2.0 incluye **15 binarios Go** en `~/.packbox/bin/`:
 
 | Comando            | Propósito                                                          |
 |--------------------|--------------------------------------------------------------------|
@@ -361,7 +361,7 @@ Total: 6 chunks únicos en lugar de 9.
 - **Integridad del CAS** — Hashes validados antes de usarse como ruta;
   escrituras atómicas.
 
-### Limitaciones conocidas (v0.1.1 Alpha)
+### Limitaciones conocidas (v0.2.0 Alpha)
 
 > [!WARNING]
 > Áreas donde más feedback se agradece.
