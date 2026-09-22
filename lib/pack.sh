@@ -291,15 +291,12 @@ pack_module() {
 # ─── Pregunta sobre entrada de menú ─────────────────────────────────────────
 # ─── Desktop entry question ─────────────────────────────────────────────────
 maybe_desktop() {
-    # Si es CLI no preguntar.
-    # If CLI, don't ask.
-    if [[ "$CURRENT_IS_GUI" != "GUI" ]]; then
-        return 0
-    fi
-    # El binario Go `packbox-install` ya crea la entrada al instalar.
-    # The Go binary `packbox-install` already creates the entry on install.
-    # Solo la creamos si el usuario la borró o si falló.
-    # We only create it if the user deleted it or if it failed.
+    # El binario Go `packbox-install` ya crea la entrada al instalar, para GUI
+    # (sin terminal) y CLI (con terminal). Aquí solo la reportamos, y la
+    # recreamos si el usuario la borró o si falló.
+    # The Go binary `packbox-install` already creates the entry on install, for
+    # GUI (no terminal) and CLI (with terminal). Here we only report it, and
+    # recreate it if the user deleted it or if it failed.
     local df="$PACKBOX_DESKTOP_DIR/packbox-$CURRENT_APP_ID.desktop"
     if [[ -f "$df" ]]; then
         det "Desktop entry: OK"

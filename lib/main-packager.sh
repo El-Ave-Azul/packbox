@@ -216,7 +216,7 @@ uninstall_apps() {
     local tpct=0
     (( totapar > 0 )) && tpct=$(( (totapar - tot) * 100 / totapar ))
     echo -e "  ${BD}$(t L_TOTAL): real $(hs "$tot") · suma $(hs "$totapar") · ahorro ${tpct}% — ${#apps[@]} apps${N}"
-    echo -e "  ${DM}One '3' · many '1 3 5' · range '1-4' · all · q${N}"
+    echo -e "  ${DM}$(_tt L_UNINST_ONE "Uno")${N} ${C}3${N}${DM} · $(_tt L_UNINST_MANY "varios")${N} ${C}1 3 5${N}${DM} · $(_tt L_UNINST_RANGE "rango")${N} ${C}1-4${N}${DM} · $(_tt L_UNINST_ALL "TODAS")${N} ${C}all${N}${DM} · ${N}${C}q${N}"
     echo -en "  ${BD}> ${N}"
     local sel
     read -r sel
