@@ -4,6 +4,7 @@
 
 ---
 
+![CI](https://github.com/El-Ave-Azul/packbox/actions/workflows/ci.yml/badge.svg)
 ![Licencia](https://img.shields.io/badge/Licencia-Apache_2.0-blue.svg)
 ![Versión](https://img.shields.io/badge/Versión-0.2.0-orange.svg)
 ![Plataforma](https://img.shields.io/badge/Plataforma-Linux-blue.svg)
@@ -236,7 +237,7 @@ Packbox v0.2.0 incluye **15 binarios Go** en `~/.packbox/bin/`:
 | `packbox-install`  | Instala una app desde el manifiesto (+ `--desktop`/`--remove-desktop`) |
 | `packbox-run`      | Ejecuta la app en el sandbox `bwrap` (overlay A/C, HOME privado)   |
 | `packbox-list`     | Lista apps con su **tamaño real** y ahorro por sharing (`--tsv`)   |
-| `packbox-remove`   | Desinstala una app y libera sus referencias CAS                    |
+| `packbox-remove`   | Desinstala una app (`--all` = todas, `--dry-run`) y libera sus refs |
 | `packbox-gc`       | Recolecta chunks **y celdas** sin referencias                      |
 | `packbox-verify`   | Comprueba libs resolubles + **compatibilidad ABI** del host        |
 | `packbox-export`   | Exporta a `.pbox` con **compresión adaptativa** y `--sign` opcional |
@@ -426,6 +427,9 @@ cd packbox
 cd src && go test ./...     # unit tests
 bash tests/integration.sh   # end-to-end (pack → export → import → run)
 ```
+
+La **CI** (`.github/workflows/ci.yml`) corre `gofmt`, `go vet`, `go test`,
+`shellcheck` y el test de integración en cada push/PR.
 
 - 🐛 [Abrir un issue](https://github.com/El-Ave-Azul/packbox/issues)
 - 💬 [Iniciar una discusión](https://github.com/El-Ave-Azul/packbox/discussions)

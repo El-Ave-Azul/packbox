@@ -9,9 +9,24 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/packbox/packbox/internal/libpath"
 )
+
+// OverlaySupported reports whether bubblewrap supports --overlay (checked once
+// per process). Older bubblewrap (< 0.8) does not, and then /app is a plain
+// read-only bind and the cells must be materialized into the tree at install.
+// OverlaySupported indica si bubblewrap soporta --overlay (se comprueba una vez
+// por proceso). El bubblewrap antiguo (< 0.8) no lo hace, y entonces /app es un
+// bind de solo lectura y las celdas deben materializarse en el árbol al instalar.
+var OverlaySupported = sync.OnceValue(func() bool {
+	out, err := exec.Command("bwrap", "--help").Output()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(out), "--overlay-src")
+})
 
 // Sandbox holds the parameters for a single run.
 // Sandbox contiene los parámetros para una ejecución.
@@ -269,7 +284,11 @@ func (s *Sandbox) useX11() bool {
 // --overlay-src posteriores quedan encima, así que el árbol (A) va al final.
 func (s *Sandbox) appMount() []string {
 	tree := filepath.Join(s.AppDir, "tree")
-	if len(s.Layers) == 0 {
+	// Without layers, or with a bubblewrap too old for --overlay, bind the tree
+	// directly. In the latter case install materialized the cells into it.
+	// Sin capas, o con un bubblewrap sin --overlay, bindea el árbol directamente.
+	// En ese último caso el instalador materializó las celdas dentro.
+	if len(s.Layers) == 0 || !OverlaySupported() {
 		return []string{"--ro-bind", tree, "/app"}
 	}
 	var a []string

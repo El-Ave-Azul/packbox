@@ -4,6 +4,7 @@
 
 ---
 
+![CI](https://github.com/El-Ave-Azul/packbox/actions/workflows/ci.yml/badge.svg)
 ![Licenza](https://img.shields.io/badge/Licenza-Apache_2.0-blue.svg)
 ![Versione](https://img.shields.io/badge/Versione-0.2.0-orange.svg)
 ![Piattaforma](https://img.shields.io/badge/Piattaforma-Linux-blue.svg)

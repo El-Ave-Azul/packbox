@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # usadas por los archivos que sourcean esta librería
 # =============================================================================
 # lib/ui.sh — Funciones de presentación (colores, iconos, barras).
 # lib/ui.sh — Presentation functions (colors, icons, bars).

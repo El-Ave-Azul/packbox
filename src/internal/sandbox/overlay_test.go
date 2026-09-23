@@ -14,6 +14,10 @@ func indexOf(a []string, x, y string) int {
 }
 
 func TestAppMountLayered(t *testing.T) {
+	orig := OverlaySupported
+	defer func() { OverlaySupported = orig }()
+	OverlaySupported = func() bool { return true } // deterministic
+
 	sb := NewSandbox("/apps/demo", "/app/bin/x", nil)
 	sb.HostHome = t.TempDir()
 	sb.Layers = []string{"/mods/a/1", "/mods/b/2"}
@@ -56,5 +60,30 @@ func TestAppMountPlain(t *testing.T) {
 	}
 	if indexOf(args, "--ro-overlay", "/app") >= 0 {
 		t.Fatalf("unexpected overlay without layers")
+	}
+}
+
+func TestAppMountFallsBackWithoutOverlay(t *testing.T) {
+	orig := OverlaySupported
+	defer func() { OverlaySupported = orig }()
+	OverlaySupported = func() bool { return false } // bwrap too old
+
+	sb := NewSandbox("/apps/demo", "/app/bin/x", nil)
+	sb.HostHome = t.TempDir()
+	sb.Layers = []string{"/mods/a/1"} // layers requested...
+
+	args, cleanup, err := sb.bwrapArgs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	// ...but with no --overlay support the tree is bound directly (install
+	// materializes the cells in that case).
+	if !hasTriple(args, "--ro-bind", "/apps/demo/tree", "/app") {
+		t.Fatalf("expected a plain ro-bind fallback: %v", args)
+	}
+	if indexOf(args, "--ro-overlay", "/app") >= 0 {
+		t.Fatalf("overlay used despite an unsupported bwrap")
 	}
 }

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # usadas por los archivos que sourcean esta librería
 # =============================================================================
 # lib/detect.sh — Detección de apps instaladas en el sistema.
 # lib/detect.sh — Detection of installed apps on the system.
@@ -312,7 +313,10 @@ scan_bundles() {
 
     local bds=()
     for bd in "${!BD_TO_SYM[@]}"; do bds+=("$bd"); done
-    IFS=$'\n' bds=($(for bd in "${bds[@]}"; do echo "${#bd}|$bd"; done | sort -n -t'|' -k1 | cut -d'|' -f2))
+    local _bsorted
+    _bsorted=$(for bd in "${bds[@]}"; do echo "${#bd}|$bd"; done | sort -n -t'|' -k1 | cut -d'|' -f2)
+    bds=()
+    [[ -n "$_bsorted" ]] && mapfile -t bds <<< "$_bsorted"
     local finals=()
     for bd in "${bds[@]}"; do
         local is_child=0 p
@@ -501,12 +505,15 @@ detect_all() {
     [[ $fe -gt 0 ]] && det "Adicionales: $fe"
     scan_bundles
 
-    IFS=$'\n' APPS_SORTED=($(for b in "${APPS_LIST[@]}"; do
+    local _sorted
+    _sorted=$(for b in "${APPS_LIST[@]}"; do
         local tt
         tt=$(echo "${APPS_MAP[$b]}" | awk -F'|' '{print $10}')
         [[ -z "$tt" ]] && tt=$(stat -c%s "$b" 2>/dev/null || echo 0)
         echo "$tt|$b"
-    done | sort -rn | cut -d'|' -f2))
+    done | sort -rn | cut -d'|' -f2)
+    APPS_SORTED=()
+    [[ -n "$_sorted" ]] && mapfile -t APPS_SORTED <<< "$_sorted"
 
     ok "$(t L_DETECTED): ${#APPS_SORTED[@]}"
 }

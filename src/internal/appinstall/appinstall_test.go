@@ -87,22 +87,22 @@ func TestComputeDelta(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	h1, _ := store.StoreBytes([]byte("aaaaaa"))       // 6
-	h2, _ := store.StoreBytes([]byte("bbbbbbbb"))     // 8
-	h3, _ := store.StoreBytes([]byte("cccccccccccc")) // 12
+	h1, _ := store.StoreBytes([]byte("aaaaaa"))                              // 6
+	h2, _ := store.StoreBytes([]byte("bbbbbbbb"))                            // 8
+	h3, _ := store.StoreBytes([]byte("cccccccccccc"))                        // 12
 	h4 := "0000000000000000000000000000000000000000000000000000000000000000" // not stored
 
 	oldM := &manifest.Manifest{
-		Name:   "app",
+		Name: "app",
 		Layers: manifest.Layers{App: manifest.AppLayer{Files: map[string]manifest.FileInfo{
 			"a": {Chunks: []string{h1}, Size: 6, Mode: "0644"},
 			"b": {Chunks: []string{h2}, Size: 8, Mode: "0644"},
 		}}},
 	}
 	newM := &manifest.Manifest{
-		Name:   "app",
+		Name: "app",
 		Layers: manifest.Layers{App: manifest.AppLayer{Files: map[string]manifest.FileInfo{
-			"a": {Chunks: []string{h1}, Size: 6, Mode: "0644"}, // kept
+			"a": {Chunks: []string{h1}, Size: 6, Mode: "0644"},  // kept
 			"b": {Chunks: []string{h3}, Size: 12, Mode: "0644"}, // changed
 			"c": {Chunks: []string{h4}, Size: 5, Mode: "0644"},  // added, missing in store
 		}}},

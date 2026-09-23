@@ -42,11 +42,15 @@ type DebugInfo struct {
 
 // Layers groups all layers (only "app" for now).
 // Layers agrupa todas las capas (solo "app" por ahora).
-type Layers struct{ App AppLayer `json:"app"` }
+type Layers struct {
+	App AppLayer `json:"app"`
+}
 
 // AppLayer holds the file map.
 // AppLayer contiene el mapa de archivos.
-type AppLayer struct{ Files map[string]FileInfo `json:"files"` }
+type AppLayer struct {
+	Files map[string]FileInfo `json:"files"`
+}
 
 // FileInfo describes a single file in a layer.
 // FileInfo describe un archivo en una capa.

@@ -43,6 +43,7 @@ create_dirs() {
     # Store needs explicit 755 perms.
     chmod 755 "$PACKBOX_STORE_DIR" 2>/dev/null || true
 
+    # shellcheck disable=SC2088  # queremos mostrar "~", no expandirlo
     ok "~/.packbox/ ($(t L_STEP3))"
 }
 

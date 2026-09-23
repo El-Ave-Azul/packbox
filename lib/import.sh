@@ -65,7 +65,8 @@ import_app() {
         echo -e "  ${DM}$(_tt L_NONE "ninguno")${N}"
     fi
     echo ""
-    local hint="$(_tt L_NUMBER_OR_PATH "número o ruta")"
+    local hint
+    hint="$(_tt L_NUMBER_OR_PATH "número o ruta")"
     [[ -n "$picker" ]] && hint="$hint, b $(_tt L_BROWSE "buscar")"
     local rng="-"; (( ${#pbs[@]} > 0 )) && rng="1-${#pbs[@]}"
     echo -en "  ${BD}> $hint [$rng, q]: ${N}"
@@ -91,6 +92,12 @@ import_app() {
         return 1
     fi
 
+    # Muestra nombre y versión del paquete elegido (best-effort).
+    # Show the chosen package's name and version (best-effort).
+    local nv
+    nv=$(_pbox_namever "$pp")
+    [[ -n "${nv// /}" ]] && det "$(_tt L_PACKAGE "Paquete"): $nv"
+
     info "Importing / Importando..."
     local out
     out=$("$PACKBOX_BIN_IMPORT" app "$pp" 2>&1)
@@ -115,4 +122,19 @@ import_app() {
 
     ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$an"; }
     read -rp "  ENTER..."
+}
+
+# _pbox_namever <file> — "name version" leídos del manifest.json del .pbox.
+# _pbox_namever <file> — "name version" read from the .pbox's manifest.json.
+_pbox_namever() {
+    local f="$1" magic
+    magic=$(head -c4 "$f" 2>/dev/null | od -An -tx1 | tr -d ' \n')
+    {
+        case "$magic" in
+            28b52ffd*) zstd -dc "$f" 2>/dev/null ;;
+            1f8b*)     gzip -dc "$f" 2>/dev/null ;;
+            fd377a58*) xz -dc "$f" 2>/dev/null ;;
+            *)         cat "$f" 2>/dev/null ;;
+        esac | head -c 8388608 | tar -xO manifest.json 2>/dev/null
+    } | jq -r '(.name // "") + " " + (.version // "")' 2>/dev/null
 }

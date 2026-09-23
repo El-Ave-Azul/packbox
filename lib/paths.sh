@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # usadas por los archivos que sourcean esta librería
 # =============================================================================
 # lib/paths.sh — Única fuente de verdad de todas las rutas de Packbox.
 # lib/paths.sh — Single source of truth for all Packbox paths.

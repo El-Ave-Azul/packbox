@@ -126,4 +126,3 @@ func usage(code int) {
 	fmt.Println("  -h, --help    show this help")
 	os.Exit(code)
 }
-

@@ -14,6 +14,7 @@ import (
 
 	"github.com/packbox/packbox/internal/cas"
 	"github.com/packbox/packbox/internal/manifest"
+	"github.com/packbox/packbox/internal/sandbox"
 	"github.com/packbox/packbox/internal/security"
 )
 
@@ -84,9 +85,19 @@ func Apply(home string, store *cas.Store, m *manifest.Manifest) (Result, error) 
 		res.Files++
 	}
 	// Cells are a runtime layer (composed by the sandbox overlay at /app), not
-	// copied into the tree.
+	// copied into the tree. But if the host's bubblewrap is too old for
+	// --overlay, materialize them into the tree so a plain bind still works.
 	// Las celdas son una capa de runtime (compuesta por el overlay del sandbox
-	// en /app), no se copian al árbol.
+	// en /app), no se copian al árbol. Pero si el bubblewrap del host es
+	// demasiado antiguo para --overlay, se materializan en el árbol para que un
+	// bind normal siga funcionando.
+	if len(m.Mods) > 0 && !sandbox.OverlaySupported() {
+		if n, err := LinkCells(home, treeDir, m.Mods); err != nil {
+			fmt.Printf("   WARN cell: %v\n", err)
+		} else {
+			res.Cells = n
+		}
+	}
 	if err := m.Save(filepath.Join(appDir, "manifest.json")); err != nil {
 		return res, err
 	}

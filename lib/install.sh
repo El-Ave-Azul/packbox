@@ -61,7 +61,8 @@ do_install() {
     # ─── Preparar journal ───────────────────────────────────────────────────
     # ─── Prepare journal ────────────────────────────────────────────────────
     if [[ -f "$PACKBOX_JOURNAL" ]]; then
-        local bak="$PACKBOX_JOURNAL.prev.$(date +%Y%m%d-%H%M%S)"
+        local bak
+        bak="$PACKBOX_JOURNAL.prev.$(date +%Y%m%d-%H%M%S)"
         mv "$PACKBOX_JOURNAL" "$bak" 2>/dev/null || true
         info "Old journal saved / Diario antiguo guardado: $(basename "$bak")"
     fi
