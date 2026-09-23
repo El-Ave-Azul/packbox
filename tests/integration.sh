@@ -36,6 +36,8 @@ step() { printf '\n== %s ==\n' "$1"; }
 
 command -v bwrap >/dev/null || fail "bubblewrap (bwrap) is required"
 command -v go    >/dev/null || fail "go is required to build the binaries"
+printf '  bwrap: %s (%s)\n' "$(bwrap --version 2>/dev/null || echo '?')" \
+    "$(bwrap --help 2>/dev/null | grep -q -- '--overlay-src' && echo 'with --overlay' || echo 'without --overlay')"
 rm -rf "$WORK"
 mkdir -p "$BIN" "$APPS" "$MODS" "$EXPORTS" \
          "$HOME_DIR/.local/share/packbox/store" "$HOME_DIR/.config/packbox/lang"
@@ -86,9 +88,20 @@ grep -q '^Categories=System;Monitor;' "$desktop" \
     || fail "Categories from the manifest were not used"
 pass "generated .desktop: absolute Icon + manifest Categories"
 
-step "install keeps cells as a runtime layer (not materialized)"
-[ ! -e "$APPS/demo/tree/lib" ] || fail "tree/lib should not exist after install"
-pass "tree has no lib/"
+step "install keeps cells as a runtime layer (bwrap with --overlay)"
+# The cells are a runtime layer ONLY when bwrap supports --overlay; otherwise
+# install materializes them into the tree (fallback). Assert whichever applies.
+# Las celdas son capa de runtime SOLO si bwrap soporta --overlay; si no, install
+# las materializa en el árbol (fallback). Se comprueba el caso que toque.
+if bwrap --help 2>/dev/null | grep -q -- '--overlay-src'; then
+    pass "bwrap supports --overlay"
+    [ ! -e "$APPS/demo/tree/lib" ] || fail "tree/lib should not exist with the overlay"
+    pass "tree has no lib/ (cells stay a runtime layer)"
+else
+    printf '  \033[33mnote\033[0m bwrap has no --overlay: cells are materialized\n'
+    [ -f "$APPS/demo/tree/lib/libcell.so" ] || fail "cells not materialized without --overlay"
+    pass "cells materialized into the tree (fallback)"
+fi
 
 step "export AUTO then import + run"
 "$BIN/packbox-export" app demo > "$WORK/export.log"
