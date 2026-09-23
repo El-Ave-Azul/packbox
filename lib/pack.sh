@@ -130,12 +130,7 @@ pack_normal() {
     fi
     invoke_pack "$wd" "$CURRENT_APP_ID" "$ep" || { fail "pack failed"; return 1; }
     jq empty "$wd/manifest.json" 2>/dev/null || { fail "invalid JSON"; return 1; }
-    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
-    local ad="$PACKBOX_APPS_DIR/$CURRENT_APP_ID"
-    [[ -d "$ad/tree" ]] || { fail "no tree/"; return 1; }
-    box_ok "$CURRENT_APP_ID  $(t L_INSTALLED)"
-    maybe_desktop
-    ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$CURRENT_APP_ID"; }
+    finish_pack "$wd" "$(t L_NORMAL)"
     rm -rf "$wd"
     unreg_cln "$wd"
 }
@@ -188,17 +183,14 @@ pack_portable() {
         ep="/app/bin/$bn"
     fi
     invoke_pack "$wd" "$CURRENT_APP_ID" "$ep" || { fail "pack failed"; return 1; }
-    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
-    local ad="$PACKBOX_APPS_DIR/$CURRENT_APP_ID"
-    [[ -d "$ad/tree" ]] || { fail "no tree/"; return 1; }
+    # Marca el manifiesto ANTES de exportar (el .pbox debe llevarlo).
+    # Flag the manifest BEFORE exporting (the .pbox must carry it).
     local tm
     tm=$(mktemp)
-    jq '. + {"portable": true, "portable_libs_count": '"$lb"'}' "$ad/manifest.json" > "$tm"
-    mv "$tm" "$ad/manifest.json"
-    box_ok "$CURRENT_APP_ID  $(t L_PORTABLE)"
+    jq '. + {"portable": true, "portable_libs_count": '"$lb"'}' "$wd/manifest.json" > "$tm"
+    mv "$tm" "$wd/manifest.json"
     det "Libs: $lb ($tlh)"
-    maybe_desktop
-    ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$CURRENT_APP_ID"; }
+    finish_pack "$wd" "$(t L_PORTABLE)"
     rm -rf "$wd"
     unreg_cln "$wd"
 }
@@ -252,19 +244,14 @@ LAUNCHER_EOF
     chmod +x "$wd/bin/launcher.sh"
 
     invoke_pack "$wd" "$CURRENT_APP_ID" "/app/bin/launcher.sh" || { fail "pack failed"; return 1; }
-    "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
-    local ad="$PACKBOX_APPS_DIR/$CURRENT_APP_ID"
-    [[ -d "$ad/tree" ]] || { fail "no tree/"; return 1; }
     local tm
     tm=$(mktemp)
     jq '. + {"portable": true, "bundle": true, "bundle_dir": "'"$bd"'", "bundle_bin_rel": "'"$br"'"}' \
-        "$ad/manifest.json" > "$tm"
-    mv "$tm" "$ad/manifest.json"
-    box_ok "$CURRENT_APP_ID  $(t L_BUNDLE)"
+        "$wd/manifest.json" > "$tm"
+    mv "$tm" "$wd/manifest.json"
     det "Bundle: $bd"
     det "Binary: bundle/$br"
-    maybe_desktop
-    ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$CURRENT_APP_ID"; }
+    finish_pack "$wd" "$(t L_BUNDLE)"
     rm -rf "$wd"
     unreg_cln "$wd"
 }
@@ -286,6 +273,34 @@ pack_module() {
     mv="${mv:-1.0.0}"
     "$PACKBOX_BIN_MODULE" create "$p" "$mn" "$mv"
     read -rp "  ENTER..."
+}
+
+# ─── Cierre del empaquetado ─────────────────────────────────────────────────
+# ─── Pack finish ────────────────────────────────────────────────────────────
+# finish_pack <wd> [etiqueta] — exporta el .pbox desde el dir de trabajo y
+# ofrece instalar la app en este equipo (por defecto NO).
+# finish_pack <wd> [label] — exports the .pbox from the working dir and offers
+# to install the app on this machine (default NO).
+finish_pack() {
+    local wd="$1" label="${2:-}" aid="$CURRENT_APP_ID"
+    echo ""
+    info "$(t L_4_EXPORT)..."
+    if ! "$PACKBOX_BIN_EXPORT" app "$wd"; then
+        fail "export failed"
+        return 1
+    fi
+    local pb="$PACKBOX_EXPORTS_DIR/$aid.pbox"
+    box_ok "$aid  $label"
+    det "File: $pb"
+    [[ -f "$pb" ]] && det "Size: $(du -h "$pb" 2>/dev/null | cut -f1)"
+
+    echo ""
+    if ask_yn "$(_tt L_INSTALL_HERE "¿Instalar también en este equipo?")" "n"; then
+        "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
+        box_ok "$aid  $(t L_INSTALLED)"
+        maybe_desktop
+        ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$aid"; }
+    fi
 }
 
 # ─── Pregunta sobre entrada de menú ─────────────────────────────────────────

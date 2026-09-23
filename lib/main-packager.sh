@@ -145,19 +145,6 @@ menu_pack() {
         ask_yn "$(_tt L_PACK_THIS "¿Empaquetar $CURRENT_APP_ID ahora?")" "s" || continue
         package_real
 
-        # Ofrecer export
-        # Offer export
-        if [[ -d "$PACKBOX_APPS_DIR/$CURRENT_APP_ID" ]]; then
-            echo ""
-            if ask_yn "$(t L_4_EXPORT)? [s/N] " "n"; then
-                if "$PACKBOX_BIN_EXPORT" app "$CURRENT_APP_ID"; then
-                    local exp="$PACKBOX_EXPORTS_DIR/$CURRENT_APP_ID.pbox"
-                    ok "OK: $exp"
-                    [[ -f "$exp" ]] && \
-                        det "Size: $(du -h "$exp" 2>/dev/null | cut -f1)"
-                fi
-            fi
-        fi
         echo ""
         ask_yn "$(t L_ANOTHER)" "n" || break
     done

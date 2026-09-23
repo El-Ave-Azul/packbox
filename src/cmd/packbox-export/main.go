@@ -50,30 +50,33 @@ func main() {
 	}
 	id := pos[1]
 	appDir := filepath.Join(home, ".local/share/packbox/apps", id)
-	if _, err := os.Stat(appDir); os.IsNotExist(err) {
-		fmt.Printf("ERROR: does not exist: %s\n", id)
+	if fi, err := os.Stat(id); err == nil && fi.IsDir() {
+		appDir = id // a directory was given (an app dir or a packing working dir)
+	}
+	m, err := manifest.Load(filepath.Join(appDir, "manifest.json"))
+	if err != nil {
+		fmt.Printf("ERROR: no manifest in %s (%v)\n", appDir, err)
 		os.Exit(1)
 	}
+	id = m.Name
 	out := filepath.Join(expDir, id+".pbox")
 	fmt.Printf("[export] %s\n", id)
 
-	// Materialize the app's cells into a staging copy so the .pbox is
-	// self-contained: at runtime they are a separate overlay layer, but the
-	// archive must carry them (import extracts a plain tree).
-	// Materializa las celdas en una copia de staging para que el .pbox sea
-	// autocontenido: en runtime son una capa aparte, pero el archivo debe
-	// llevarlas (import extrae un árbol normal).
+	// Stage a copy with the app-dir layout (manifest.json + tree/) and the
+	// cells materialized, so the .pbox is self-contained.
+	// Copia a staging con el layout de app (manifest.json + tree/) y las celdas
+	// materializadas, para que el .pbox sea autocontenido.
 	staged := appDir
-	if m, err := manifest.Load(filepath.Join(appDir, "manifest.json")); err == nil && len(m.Mods) > 0 {
-		if stageRoot, err := os.MkdirTemp("", "packbox-export-"); err == nil {
-			defer os.RemoveAll(stageRoot)
-			dst := filepath.Join(stageRoot, filepath.Base(appDir))
-			if err := copyTree(appDir, dst); err == nil {
-				if _, err := appinstall.LinkCells(home, filepath.Join(dst, "tree"), m.Mods); err != nil {
-					fmt.Printf("   WARN cells: %v\n", err)
-				}
-				staged = dst
+	if stageRoot, err := os.MkdirTemp("", "packbox-export-"); err == nil {
+		defer os.RemoveAll(stageRoot)
+		dst := filepath.Join(stageRoot, "app")
+		if err := stageDir(appDir, dst); err != nil {
+			fmt.Printf("   WARN staging: %v\n", err)
+		} else {
+			if _, err := appinstall.LinkCells(home, filepath.Join(dst, "tree"), m.Mods); err != nil {
+				fmt.Printf("   WARN cells: %v\n", err)
 			}
+			staged = dst
 		}
 	}
 
@@ -136,10 +139,9 @@ func main() {
 		}
 	}
 
-	m, _ := manifest.Load(filepath.Join(appDir, "manifest.json"))
 	fmt.Printf("[ok] %s\n", out)
 	fmt.Printf("   Algorithm: %s\n", comp)
-	if m != nil && m.Portable {
+	if m.Portable {
 		fmt.Println("   Mode: PORTABLE")
 	}
 	if fi, err := os.Stat(out); err == nil {
@@ -192,6 +194,58 @@ func writeTar(tw *tar.Writer, srcDir string) error {
 		}
 		return nil
 	})
+}
+
+// stageDir copies src into dst with the app-dir layout: manifest.json at the
+// root and every other entry under tree/. If src already looks like an app dir
+// (it has a tree/ subdir) it is copied as-is.
+// stageDir copia src en dst con el layout de app: manifest.json en la raíz y el
+// resto bajo tree/. Si src ya parece un dir de app (tiene tree/) se copia tal cual.
+func stageDir(src, dst string) error {
+	if fi, err := os.Stat(filepath.Join(src, "tree")); err == nil && fi.IsDir() {
+		return copyTree(src, dst)
+	}
+	if err := os.MkdirAll(filepath.Join(dst, "tree"), 0755); err != nil {
+		return err
+	}
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		s := filepath.Join(src, e.Name())
+		if e.Name() == "manifest.json" {
+			if err := copyFileTo(s, filepath.Join(dst, "manifest.json")); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := copyTree(s, filepath.Join(dst, "tree", e.Name())); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// copyFileTo copies a single file from src to dst.
+// copyFileTo copia un solo archivo de src a dst.
+func copyFileTo(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	fi, err := in.Stat()
+	if err != nil {
+		return err
+	}
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fi.Mode().Perm())
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	return err
 }
 
 // copyTree copies a directory tree (files, dirs, symlinks) from src to dst.

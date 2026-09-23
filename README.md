@@ -180,8 +180,12 @@ Ejecuta el mismo script y elige la opción **2**:
 ./packbox-packager.sh
 ```
 
-Menú: empaquetar, listar, garbage collection, exportar, importar, desinstalar,
-idioma. Detecta apps desde `.desktop` en `/usr/share/applications/`, bundles en
+La opción **1 (Empaquetar)** busca las apps **ya instaladas** y **genera un
+`.pbox`** en `~/.local/share/packbox/exports/`. Al terminar pregunta si además
+quieres **instalarla en este equipo** (por defecto **no**, para no ensuciar tu
+sistema). Para instalar un `.pbox` usa la opción **5 (Importar)**.
+
+Detecta apps desde `.desktop` en `/usr/share/applications/`, bundles en
 `/opt/*` y binarios comunes (`htop`, `btop`, `firefox`, `gimp`, …).
 
 En los modos **Normal** y **Portable** cada lib no universal del cierre `ldd`
