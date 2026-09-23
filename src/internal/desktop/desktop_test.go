@@ -22,9 +22,21 @@ func TestCreateCLIWritesTerminalEntry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("no .desktop written for a CLI app: %v", err)
 	}
-	for _, want := range []string{"Terminal=true", "Icon=utilities-terminal", "Categories=Utility;"} {
+	for _, want := range []string{"Terminal=true", "Categories=Utility;"} {
 		if !strings.Contains(string(data), want) {
 			t.Fatalf("CLI entry missing %q\n---\n%s", want, data)
+		}
+	}
+	// If an icon is set, it must be an absolute path that exists.
+	for _, l := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(l, "Icon=") {
+			p := strings.TrimPrefix(l, "Icon=")
+			if !strings.HasPrefix(p, "/") {
+				t.Fatalf("Icon is not an absolute path: %q", p)
+			}
+			if _, err := os.Stat(p); err != nil {
+				t.Fatalf("Icon points to a missing file: %q", p)
+			}
 		}
 	}
 	if strings.Contains(string(data), "StartupWMClass=") {
@@ -58,10 +70,11 @@ func TestCreateGUIFindsIconAndWritesEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 	runBin := filepath.Join(home, ".packbox/bin/packbox-run")
+	iconDst := filepath.Join(home, ".local/share/icons/hicolor/256x256/apps", "packbox-"+m.Name+".png")
 	for _, want := range []string{
 		"Name=org.example.App",
 		"Exec=" + runBin + " " + m.Name,
-		"Icon=packbox-" + m.Name,
+		"Icon=" + iconDst,
 		"Terminal=false",
 		"StartupWMClass=" + m.Name,
 		"Keywords=packbox;" + m.Name + ";",
@@ -72,7 +85,6 @@ func TestCreateGUIFindsIconAndWritesEntry(t *testing.T) {
 			t.Fatalf("desktop entry missing %q\n---\n%s", want, data)
 		}
 	}
-	iconDst := filepath.Join(home, ".local/share/icons/hicolor/256x256/apps", "packbox-"+m.Name+".png")
 	if _, err := os.Stat(iconDst); err != nil {
 		t.Fatalf("icon not copied: %v", err)
 	}
@@ -116,6 +128,23 @@ func TestRemove(t *testing.T) {
 	}
 	if _, err := os.Stat(DesktopPath(home, "app")); err == nil {
 		t.Fatal("desktop file not removed")
+	}
+}
+
+func TestCreateUsesManifestCategories(t *testing.T) {
+	for _, gui := range []bool{true, false} {
+		home := t.TempDir()
+		m := &manifest.Manifest{Name: "app", GUI: gui, Categories: "System;Monitor;"}
+		if _, err := Create(home, m); err != nil {
+			t.Fatal(err)
+		}
+		data, err := os.ReadFile(DesktopPath(home, "app"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(data), "Categories=System;Monitor;") {
+			t.Fatalf("manifest categories not used (gui=%v):\n%s", gui, data)
+		}
 	}
 }
 

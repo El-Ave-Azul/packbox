@@ -38,6 +38,7 @@ var strFlags = map[string]bool{
 	"--mods": true, "-mods": true,
 	"--toolkit": true, "-toolkit": true,
 	"--icon": true, "-icon": true,
+	"--categories": true, "-categories": true,
 }
 
 // pre splits positional args from flags (allows dir before flags).
@@ -72,6 +73,7 @@ func main() {
 	gui := flag.Bool("gui", false, "")
 	tk := flag.String("toolkit", "", "")
 	icon := flag.String("icon", "", "")
+	categories := flag.String("categories", "", "")
 	network := flag.Bool("network", false, "")
 	x11 := flag.Bool("x11", false, "")
 	noDebug := flag.Bool("no-debug", false, "")
@@ -248,6 +250,7 @@ func main() {
 		GUI:           *gui,
 		Toolkit:       *tk,
 		Icon:          *icon,
+		Categories:    *categories,
 		Network:       *network,
 		X11:           *x11,
 		Layers:        manifest.Layers{App: manifest.AppLayer{Files: files}},

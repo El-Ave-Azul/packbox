@@ -59,6 +59,10 @@ invoke_pack() {
         --gui="$gf" --network="$nf" --toolkit "$CURRENT_TOOLKIT")
     # Celdas (módulos) referenciadas, si las hay. / Referenced cells, if any.
     [[ -n "${CURRENT_MODS:-}" ]] && args+=(--mods "$CURRENT_MODS")
+    # Icono y categoría reales (del .desktop original), si se conocen.
+    # The app's real icon and categories (from the original .desktop), if known.
+    [[ -n "${CURRENT_ICON:-}" ]] && args+=(--icon "$CURRENT_ICON")
+    [[ -n "${CURRENT_CATEGORIES:-}" ]] && args+=(--categories "$CURRENT_CATEGORIES")
     "$PACKBOX_BIN_PACK" "${args[@]}" "$wd"
 }
 

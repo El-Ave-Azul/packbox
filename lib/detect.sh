@@ -32,6 +32,50 @@ CURRENT_PACK_MODE=2
 CURRENT_BUNDLE_DIR=""
 CURRENT_NETWORK="false"
 CURRENT_MODS=""
+CURRENT_ICON=""
+CURRENT_CATEGORIES=""
+# Icono y categoría de cada app, tomados del .desktop original (clave = binario).
+# Icon and category per app, taken from the original .desktop (key = binary).
+declare -gA ICON_OF=()
+declare -gA CAT_OF=()
+
+# ─── Icono del sistema ──────────────────────────────────────────────────────
+# ─── System icon ────────────────────────────────────────────────────────────
+# resolve_icon <nombre-o-ruta> — ruta absoluta a un icono real, o vacío.
+# resolve_icon <name-or-path> — absolute path to a real icon file, or empty.
+resolve_icon() {
+    local n="$1" d e p
+    [[ -z "$n" ]] && return 1
+    if [[ "$n" == /* ]]; then
+        [[ -f "$n" ]] && { echo "$n"; return 0; }
+        return 1
+    fi
+    for d in /usr/share/pixmaps \
+        /usr/share/icons/hicolor/256x256/apps /usr/share/icons/hicolor/128x128/apps \
+        /usr/share/icons/hicolor/64x64/apps /usr/share/icons/hicolor/scalable/apps; do
+        for e in png svg xpm; do
+            p="$d/$n.$e"
+            [[ -f "$p" ]] && { echo "$p"; return 0; }
+        done
+    done
+    p=$(find /usr/share/icons -maxdepth 4 -type f \( -name "$n.png" -o -name "$n.svg" \) 2>/dev/null | head -1)
+    [[ -n "$p" ]] && { echo "$p"; return 0; }
+    return 1
+}
+
+# inherit_meta <bin> — hereda icono/categoría del .desktop del sistema que
+# apunte al mismo binario (por basename), si aún no los tiene.
+# inherit_meta <bin> — inherits icon/category from the system .desktop pointing
+# at the same binary (by basename), if it doesn't have them yet.
+inherit_meta() {
+    local b="$1" sym
+    [[ -z "$b" ]] && return 0
+    sym=$(command -v "$(basename "$b")" 2>/dev/null || true)
+    [[ -z "$sym" ]] && return 0
+    [[ -z "${CAT_OF[$b]:-}" && -n "${CAT_OF[$sym]:-}" ]] && CAT_OF[$b]="${CAT_OF[$sym]}"
+    [[ -z "${ICON_OF[$b]:-}" && -n "${ICON_OF[$sym]:-}" ]] && ICON_OF[$b]="${ICON_OF[$sym]}"
+    return 0
+}
 
 # ─── Detección de GUI ────────────────────────────────────────────────────────
 # ─── GUI detection ───────────────────────────────────────────────────────────
@@ -394,6 +438,7 @@ scan_bundles() {
             aid=$(echo "$aid" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-.' | sed 's/--*/-/g')
             local sh
             sh=$(hs "$ds")
+            inherit_meta "$mb"
             APPS_MAP["$mb"]="$name|$mb|Other|$sh|ELF|$aid|$g|$tk|$od|$ds"
             APPS_LIST+=("$mb")
             found=$((found + 1))
@@ -424,13 +469,14 @@ scan_desktop() {
         while IFS= read -r df; do
             n=$((n + 1))
             progress "$n" "$tot" "desktop"
-            local name="" ec="" cat="" nd=""
+            local name="" ec="" cat="" nd="" icon=""
             local ln
             while IFS= read -r ln; do
                 case "$ln" in
                     Name=*) [[ -z "$name" ]] && name="${ln#Name=}" ;;
                     Exec=*) [[ -z "$ec" ]] && ec="${ln#Exec=}" ;;
                     Categories=*) cat="${ln#Categories=}" ;;
+                    Icon=*) icon="${ln#Icon=}" ;;
                     NoDisplay=true) nd="true" ;;
                 esac
             done < "$df"
@@ -469,6 +515,14 @@ scan_desktop() {
             aid=$(echo "$aid" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-' | sed 's/--*/-/g;s/^-//;s/-$//')
             [[ -z "$aid" ]] && aid="app-$(echo "$bp" | md5sum | cut -c1-8)"
             reg_app "$name" "$bp" "$c" "$aid" "$g" "$tk"
+            # Icono y categoría reales de la app (.desktop), para la entrada de
+            # menú generada.
+            # The app's real icon and categories (.desktop), for the generated
+            # menu entry.
+            [[ -n "$cat" ]] && CAT_OF[$bp]="$cat"
+            local iconp=""
+            [[ -n "$icon" ]] && iconp=$(resolve_icon "$icon")
+            [[ -n "$iconp" ]] && ICON_OF[$bp]="$iconp"
         done < <(find "$d" -maxdepth 1 -name "*.desktop" 2>/dev/null)
     done
     echo ""
@@ -500,6 +554,7 @@ detect_all() {
         gui_app "$bp" && g="GUI"
         local tk
         tk=$(toolkit "$bp")
+        inherit_meta "$bp"
         reg_app "$a" "$bp" "Utilities" "org.$a.$a" "$g" "$tk" && fe=$((fe + 1))
     done
     [[ $fe -gt 0 ]] && det "Adicionales: $fe"
@@ -701,6 +756,10 @@ configure_pack() {
     CURRENT_IS_GUI="$gui"
     CURRENT_TOOLKIT="$tk"
     CURRENT_BUNDLE_DIR="$bd"
+    # Icono/categoría reales de la app (vacíos si no hay .desktop).
+    # The app's real icon/categories (empty if there is no .desktop).
+    CURRENT_ICON="${ICON_OF[$p]:-}"
+    CURRENT_CATEGORIES="${CAT_OF[$p]:-}"
 
     # ─── Pregunta de red ────────────────────────────────────────────────────
     # ─── Network question ───────────────────────────────────────────────────

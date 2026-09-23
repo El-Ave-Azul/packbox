@@ -22,6 +22,7 @@ type Manifest struct {
 	GUI           bool         `json:"gui,omitempty"`
 	Toolkit       string       `json:"toolkit,omitempty"`
 	Icon          string       `json:"icon,omitempty"`
+	Categories    string       `json:"categories,omitempty"`
 	Network       bool         `json:"network,omitempty"`
 	X11           bool         `json:"x11,omitempty"`
 	Layers        Layers       `json:"layers"`

@@ -66,12 +66,25 @@ cat > "$aw/bin/app" <<'SH'
 if [ -f /app/lib/libcell.so ]; then echo LIBS_OK; else echo LIBS_MISSING; fi
 SH
 chmod +x "$aw/bin/app"
+printf '<svg/>' > "$WORK/demo-icon.svg"
 "$BIN/packbox-pack" --name demo --version 1.0 --entrypoint /app/bin/app \
-    --mods org.test.cell@1 "$aw" >/dev/null
+    --mods org.test.cell@1 --icon "$WORK/demo-icon.svg" --categories "System;Monitor;" "$aw" >/dev/null
 pass "packed"
 
 "$BIN/packbox-install" "$aw/manifest.json" >/dev/null
 pass "installed"
+
+desktop="$HOME_DIR/.local/share/applications/packbox-demo.desktop"
+[ -f "$desktop" ] || fail "no .desktop entry was created"
+icon=$(sed -n 's/^Icon=//p' "$desktop")
+case "$icon" in
+    /*) ;;
+    *) fail "Icon= is not an absolute path: $icon" ;;
+esac
+[ -f "$icon" ] || fail "Icon= points to a missing file: $icon"
+grep -q '^Categories=System;Monitor;' "$desktop" \
+    || fail "Categories from the manifest were not used"
+pass "generated .desktop: absolute Icon + manifest Categories"
 
 step "install keeps cells as a runtime layer (not materialized)"
 [ ! -e "$APPS/demo/tree/lib" ] || fail "tree/lib should not exist after install"

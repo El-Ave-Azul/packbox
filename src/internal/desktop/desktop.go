@@ -63,26 +63,47 @@ func Create(home string, m *manifest.Manifest) (bool, error) {
 		return false, err
 	}
 
-	iconRef := "application-x-executable"
-	if !m.GUI {
-		iconRef = "utilities-terminal"
-	}
+	// Icon: copy it into our icon dir and reference it by ABSOLUTE PATH, so it
+	// renders with any icon theme (a bare name only resolves in the active one).
+	// Icono: se copia a nuestro dir de iconos y se referencia por RUTA ABSOLUTA,
+	// así se ve con cualquier tema (un nombre solo resuelve en el tema activo).
+	iconRef := ""
 	if src, ext := findIcon(home, m); src != "" {
 		tgt := filepath.Join(iconsDir(home), "packbox-"+appID+ext)
 		if err := copyFile(src, tgt); err == nil {
-			iconRef = "packbox-" + appID
+			iconRef = tgt
 		}
+	}
+	if iconRef == "" {
+		names := []string{"application-x-executable"}
+		if !m.GUI {
+			names = []string{"utilities-terminal", "application-x-executable"}
+		}
+		iconRef = resolveIcon(names...)
+	}
+	iconLine := ""
+	if iconRef != "" {
+		iconLine = "Icon=" + iconRef + "\n"
 	}
 
 	// CLI apps open in a terminal; GUI apps don't. WM class only matters for GUI.
 	// Las apps CLI se abren en una terminal; las GUI no. WM class solo para GUI.
 	terminal := "false"
-	cats := categories(appID)
 	wmclass := "StartupWMClass=" + appID + "\n"
+	// Categories: use the source app's own ones when known (from its .desktop),
+	// else the name heuristic.
+	// Categorías: usa las de la app original si se conocen (de su .desktop), si
+	// no, la heurística por nombre.
+	cats := strings.TrimSpace(m.Categories)
+	if cats == "" {
+		cats = categories(appID)
+	}
 	if !m.GUI {
 		terminal = "true"
-		cats = "Utility;"
 		wmclass = ""
+		if cats == "" {
+			cats = "Utility;"
+		}
 	}
 
 	content := fmt.Sprintf(`[Desktop Entry]
@@ -92,8 +113,7 @@ Name=%s
 Comment=%s
 Exec=%s %s
 TryExec=%s
-Icon=%s
-Terminal=%s
+%sTerminal=%s
 StartupNotify=true
 %sCategories=%s
 Keywords=packbox;%s;
@@ -101,7 +121,7 @@ X-Packbox-ID=%s
 X-Packbox-Version=%s
 X-Packbox-Toolkit=%s
 `, sanitize(m.Name), sanitize(m.Description), runBin(home), appID, runBin(home),
-		iconRef, terminal, wmclass, cats, appID, appID, sanitize(m.Version), sanitize(m.Toolkit))
+		iconLine, terminal, wmclass, cats, appID, appID, sanitize(m.Version), sanitize(m.Toolkit))
 
 	df := DesktopPath(home, appID)
 	if err := os.WriteFile(df, []byte(content), 0644); err != nil {
@@ -129,6 +149,33 @@ func Remove(home, appID string) error {
 }
 
 // ─── Icon discovery ─────────────────────────────────────────────────────────
+
+// resolveIcon returns an absolute path to a real icon file for the first name
+// found on the host (hicolor sizes and pixmaps), or "" if none exists. Used as
+// a fallback so the .desktop entry is never blank.
+// resolveIcon devuelve la ruta absoluta a un icono real para el primer nombre
+// encontrado en el host (tamaños hicolor y pixmaps), o "" si no hay. Se usa como
+// fallback para que la entrada .desktop nunca quede en blanco.
+func resolveIcon(names ...string) string {
+	dirs := []string{
+		"/usr/share/icons/hicolor/256x256/apps",
+		"/usr/share/icons/hicolor/128x128/apps",
+		"/usr/share/icons/hicolor/64x64/apps",
+		"/usr/share/icons/hicolor/scalable/apps",
+		"/usr/share/pixmaps",
+	}
+	for _, n := range names {
+		for _, d := range dirs {
+			for _, e := range []string{".png", ".svg", ".xpm"} {
+				p := filepath.Join(d, n+e)
+				if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+					return p
+				}
+			}
+		}
+	}
+	return ""
+}
 
 // findIcon returns the best icon source path and its extension.
 // findIcon devuelve la mejor ruta de icono y su extensión.
