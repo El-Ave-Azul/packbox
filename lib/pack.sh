@@ -110,6 +110,11 @@ pack_normal() {
     local bn
     bn=$(basename "$p")
     info "Analyzing libs / Analizando libs..."
+    # Si el binario es un wrapper/script, analiza el ELF real que lanza.
+    # If the binary is a wrapper/script, analyze the real ELF it launches.
+    local anal
+    anal=$(resolve_elf "$p")
+    [[ -z "$anal" ]] && anal="$p"
     local lsys=0 lpriv=0 plibs=()
     while IFS='|' read -r lib lp; do
         [[ -z "$lib" || -z "$lp" ]] && continue
@@ -126,8 +131,8 @@ pack_normal() {
         else
             plibs+=("$lp"); lpriv=$((lpriv + 1))
         fi
-    done < <(get_libs "$p")
-    warn_no_libs "$p" "$lpriv"
+    done < <(get_libs "$anal")
+    warn_no_libs "$anal" "$lpriv"
     det "System: $lsys  Private: $lpriv"
     local ep
     if [[ $lpriv -gt 0 ]]; then
@@ -164,6 +169,11 @@ pack_portable() {
     local bn
     bn=$(basename "$p")
     info "Non-universal libs / Libs no universales..."
+    # Si el binario es un wrapper/script, analiza el ELF real que lanza.
+    # If the binary is a wrapper/script, analyze the real ELF it launches.
+    local anal
+    anal=$(resolve_elf "$p")
+    [[ -z "$anal" ]] && anal="$p"
     local lb=0 tls=0 sku=0 seen="" libs=()
     while IFS='|' read -r lib lp; do
         [[ -z "$lib" || -z "$lp" || ! -f "$lp" ]] && continue
@@ -177,8 +187,8 @@ pack_portable() {
         ls=$(stat -c%s "$lp" 2>/dev/null || echo 0)
         tls=$((tls + ls))
         lb=$((lb + 1))
-    done < <(get_libs "$p")
-    warn_no_libs "$p" "$lb"
+    done < <(get_libs "$anal")
+    warn_no_libs "$anal" "$lb"
     local tlh
     tlh=$(hs "$tls")
     local ep

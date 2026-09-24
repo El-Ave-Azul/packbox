@@ -66,6 +66,25 @@ resolve_icon() {
     return 1
 }
 
+# resolve_elf <bin> — devuelve un ELF real: el propio bin si lo es, o el que
+# lanza un wrapper/script (muchas distros envuelven el binario real en /usr/bin).
+# Sin esto, `ldd` sobre el wrapper no ve ninguna lib y la app queda sin sus
+# dependencias ("error while loading shared libraries: ...").
+# resolve_elf <bin> — returns a real ELF: the binary itself, or the one a
+# wrapper/script launches (many distros wrap the real binary in /usr/bin).
+# Without it `ldd` on the wrapper sees no libs and the app ends up missing its
+# dependencies ("error while loading shared libraries: ...").
+resolve_elf() {
+    local b="$1" p
+    [[ -f "$b" ]] || return 1
+    file -b "$b" 2>/dev/null | grep -q ELF && { echo "$b"; return 0; }
+    while IFS= read -r p; do
+        [[ -f "$p" && -x "$p" ]] || continue
+        file -b "$p" 2>/dev/null | grep -q ELF && { echo "$p"; return 0; }
+    done < <(grep -oE '/(usr|opt|lib|bin)[A-Za-z0-9_./+-]*' "$b" 2>/dev/null | sort -u)
+    return 1
+}
+
 # inherit_meta <bin> — hereda icono/categoría del .desktop del sistema que
 # apunte al mismo binario (por basename), si aún no los tiene.
 # inherit_meta <bin> — inherits icon/category from the system .desktop pointing
