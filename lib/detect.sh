@@ -38,6 +38,9 @@ CURRENT_CATEGORIES=""
 # Icon and category per app, taken from the original .desktop (key = binary).
 declare -gA ICON_OF=()
 declare -gA CAT_OF=()
+# GUI/CLI por app, del .desktop original (Terminal=true → CLI). Clave = binario.
+# GUI/CLI per app, from the original .desktop (Terminal=true → CLI). Key = binary.
+declare -gA GUI_OF=()
 
 # ─── Icono del sistema ──────────────────────────────────────────────────────
 # ─── System icon ────────────────────────────────────────────────────────────
@@ -74,6 +77,7 @@ inherit_meta() {
     [[ -z "$sym" ]] && return 0
     [[ -z "${CAT_OF[$b]:-}" && -n "${CAT_OF[$sym]:-}" ]] && CAT_OF[$b]="${CAT_OF[$sym]}"
     [[ -z "${ICON_OF[$b]:-}" && -n "${ICON_OF[$sym]:-}" ]] && ICON_OF[$b]="${ICON_OF[$sym]}"
+    [[ -z "${GUI_OF[$b]:-}" && -n "${GUI_OF[$sym]:-}" ]] && GUI_OF[$b]="${GUI_OF[$sym]}"
     return 0
 }
 
@@ -385,6 +389,7 @@ scan_bundles() {
         [[ -f "$real" ]] || real="$s"
         local g="CLI"
         gui_app "$real" && g="GUI"
+        [[ -n "${GUI_OF[$s]:-}" ]] && g="${GUI_OF[$s]}"
         local tk
         tk=$(toolkit "$real")
         [[ "$g" == "CLI" ]] && tk=""
@@ -439,6 +444,7 @@ scan_bundles() {
             local sh
             sh=$(hs "$ds")
             inherit_meta "$mb"
+            [[ -n "${GUI_OF[$mb]:-}" ]] && g="${GUI_OF[$mb]}"
             APPS_MAP["$mb"]="$name|$mb|Other|$sh|ELF|$aid|$g|$tk|$od|$ds"
             APPS_LIST+=("$mb")
             found=$((found + 1))
@@ -469,7 +475,7 @@ scan_desktop() {
         while IFS= read -r df; do
             n=$((n + 1))
             progress "$n" "$tot" "desktop"
-            local name="" ec="" cat="" nd="" icon=""
+            local name="" ec="" cat="" nd="" icon="" term=""
             local ln
             while IFS= read -r ln; do
                 case "$ln" in
@@ -477,6 +483,7 @@ scan_desktop() {
                     Exec=*) [[ -z "$ec" ]] && ec="${ln#Exec=}" ;;
                     Categories=*) cat="${ln#Categories=}" ;;
                     Icon=*) icon="${ln#Icon=}" ;;
+                    Terminal=*) term="${ln#Terminal=}" ;;
                     NoDisplay=true) nd="true" ;;
                 esac
             done < "$df"
@@ -506,8 +513,15 @@ scan_desktop() {
             elif [[ "$cat" == *"System"* || "$cat" == *"Settings"* ]]; then c="System"
             elif [[ "$cat" == *"Utility"* ]]; then c="Utilities"
             fi
-            local g="CLI"
-            gui_app "$bp" && g="GUI"
+            # El .desktop manda: Terminal=true → app de terminal; si no, GUI.
+            # (gui_app/ldd falla con apps que cargan el toolkit con dlopen:
+            #  Firefox no muestra libgtk en ldd y se marcaba CLI.)
+            # The .desktop decides: Terminal=true → terminal app; else GUI.
+            # (gui_app/ldd fails for apps that dlopen their toolkit: Firefox
+            #  shows no libgtk in ldd and was tagged CLI.)
+            local g="GUI"
+            [[ "$term" == "true" ]] && g="CLI"
+            GUI_OF[$bp]="$g"
             local tk
             tk=$(toolkit "$bp")
             local aid
@@ -806,7 +820,22 @@ configure_pack() {
     # ─── Celdas (módulos reutilizables) ─────────────────────────────────────
     # ─── Cells (reusable modules) ───────────────────────────────────────────
     echo ""
+    # En Normal/Portable las libs de la app se convierten en celdas solas; este
+    # campo es solo para AÑADIR celdas ya existentes (se listan las disponibles).
+    # In Normal/Portable the app's libs become cells by themselves; this field is
+    # only to ADD existing cells (the available ones are listed).
+    local avail=() d
+    if [[ -d "$PACKBOX_MODS_DIR" ]]; then
+        for d in "$PACKBOX_MODS_DIR"/*/*/; do
+            [[ -d "$d" ]] && avail+=("$(basename "$(dirname "$d")")@$(basename "$d")")
+        done
+    fi
     echo -e "  ${BD}$(_tt L_CELLS "Celdas (name@version, separadas por coma; vacío = ninguna")${N}"
+    if (( ${#avail[@]} > 0 )); then
+        echo -e "     ${DM}$(_tt L_CELLS_AVAIL "disponibles")${N}: ${avail[*]}"
+    else
+        echo -e "     ${DM}$(_tt L_CELLS_HINT "en Normal/Portable las libs se convierten en celdas automáticamente; aquí solo se añaden celdas existentes")${N}"
+    fi
     echo -en "  ${DM}[$(_tt L_NONE "ninguna")]${N}: "
     read -r cm
     CURRENT_MODS="${cm// /}"
