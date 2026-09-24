@@ -113,12 +113,21 @@ pack_normal() {
     local lsys=0 lpriv=0 plibs=()
     while IFS='|' read -r lib lp; do
         [[ -z "$lib" || -z "$lp" ]] && continue
-        if [[ "$lp" == /usr/lib/* || "$lp" == /lib/* || "$lp" == /lib64/* ]]; then
+        # "Sistema" = lib UNIVERSAL (vive en el host: glibc, libm, libz…).
+        # Todo lo demás se empaqueta: en Debian/Ubuntu las libs de la app también
+        # están en /usr/lib/x86_64-linux-gnu, y tratar /usr/lib como "sistema"
+        # dejaba a la app sin sus dependencias reales ("cannot open shared object").
+        # "System" = a UNIVERSAL lib (lives on the host: glibc, libm, libz…).
+        # Anything else is packaged: on Debian/Ubuntu the app's own libs also live
+        # under /usr/lib/x86_64-linux-gnu, and treating /usr/lib as "system" left
+        # the app without its real deps ("cannot open shared object").
+        if is_universal "$lib"; then
             lsys=$((lsys + 1))
         else
             plibs+=("$lp"); lpriv=$((lpriv + 1))
         fi
     done < <(get_libs "$p")
+    warn_no_libs "$p" "$lpriv"
     det "System: $lsys  Private: $lpriv"
     local ep
     if [[ $lpriv -gt 0 ]]; then
@@ -169,6 +178,7 @@ pack_portable() {
         tls=$((tls + ls))
         lb=$((lb + 1))
     done < <(get_libs "$p")
+    warn_no_libs "$p" "$lb"
     local tlh
     tlh=$(hs "$tls")
     local ep
@@ -305,6 +315,17 @@ finish_pack() {
         maybe_desktop
         ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$aid"; }
     fi
+}
+
+# warn_no_libs <bin> <count> — si no se detectaron libs y el binario no es ELF
+# (script/wrapper), avisa: sus dependencias no se pueden inferir.
+# warn_no_libs <bin> <count> — if no libs were found and the binary is not ELF
+# (a script/wrapper), warn: its dependencies cannot be inferred.
+warn_no_libs() {
+    local bin="${1:-}" n="${2:-0}"
+    [[ -z "$bin" || "$n" -gt 0 ]] && return 0
+    file -b "$bin" 2>/dev/null | grep -q ELF && return 0
+    warn "$(_tt L_NOT_ELF "el binario no es un ELF (¿script/wrapper?): no se pueden deducir sus libs; la app puede no arrancar")"
 }
 
 # ─── Pregunta sobre entrada de menú ─────────────────────────────────────────
