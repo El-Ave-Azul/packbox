@@ -13,23 +13,28 @@ import (
 // Manifest describes an app bundle.
 // Manifest describe un bundle de aplicación.
 type Manifest struct {
-	SchemaVersion string       `json:"schema_version"`
-	Name          string       `json:"name"`
-	Version       string       `json:"version"`
-	Description   string       `json:"description,omitempty"`
-	Entrypoint    string       `json:"entrypoint"`
-	Arch          string       `json:"arch"`
-	GUI           bool         `json:"gui,omitempty"`
-	Toolkit       string       `json:"toolkit,omitempty"`
-	Icon          string       `json:"icon,omitempty"`
-	Categories    string       `json:"categories,omitempty"`
-	Network       bool         `json:"network,omitempty"`
-	X11           bool         `json:"x11,omitempty"`
-	Layers        Layers       `json:"layers"`
-	Mods          []string     `json:"mods"`
-	HostContract  HostContract `json:"host_contract"`
-	Portable      bool         `json:"portable,omitempty"`
-	Debug         *DebugInfo   `json:"debug,omitempty"`
+	SchemaVersion string `json:"schema_version"`
+	Name          string `json:"name"`
+	Version       string `json:"version"`
+	Description   string `json:"description,omitempty"`
+	Entrypoint    string `json:"entrypoint"`
+	Arch          string `json:"arch"`
+	GUI           bool   `json:"gui,omitempty"`
+	Toolkit       string `json:"toolkit,omitempty"`
+	Icon          string `json:"icon,omitempty"`
+	Categories    string `json:"categories,omitempty"`
+	Network       bool   `json:"network,omitempty"`
+	X11           bool   `json:"x11,omitempty"`
+	// Sandbox lists extra host capabilities to grant (opt-in), e.g.
+	// "system-bus", "libvirt", "kvm" for VM apps like GNOME Boxes.
+	// Sandbox lista capacidades extra del host a conceder (opt-in), p. ej.
+	// "system-bus", "libvirt", "kvm" para apps de VM como GNOME Boxes.
+	Sandbox      []string     `json:"sandbox,omitempty"`
+	Layers       Layers       `json:"layers"`
+	Mods         []string     `json:"mods"`
+	HostContract HostContract `json:"host_contract"`
+	Portable     bool         `json:"portable,omitempty"`
+	Debug        *DebugInfo   `json:"debug,omitempty"`
 }
 
 // DebugInfo points at the debug-symbol cell split out of the app's binary (so

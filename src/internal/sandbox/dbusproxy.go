@@ -120,12 +120,17 @@ func (s *Sandbox) sessionPolicy() busPolicy {
 	return busPolicy{Talk: talk}
 }
 
-// systemPolicy returns the system-bus policy (nothing by default).
-// systemPolicy devuelve la política del bus de sistema (nada por defecto).
+// systemPolicy returns the system-bus policy. By default nothing is allowed; the
+// opt-in "system-bus"/"libvirt" capabilities allow libvirt + the bus itself.
+// systemPolicy devuelve la política del bus de sistema. Por defecto nada; las
+// capacidades opt-in "system-bus"/"libvirt" permiten libvirt + el propio bus.
 func (s *Sandbox) systemPolicy() busPolicy {
 	talk := s.AllowSystemTalk
 	if talk == nil {
 		talk = []string{}
+		if s.hasCap("system-bus") || s.hasCap("libvirt") {
+			talk = append(talk, "org.libvirt", "org.freedesktop.DBus")
+		}
 	}
 	return busPolicy{Talk: talk}
 }

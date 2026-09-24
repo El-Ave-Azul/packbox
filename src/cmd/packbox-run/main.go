@@ -35,6 +35,7 @@ func main() {
 	sb.IsGUI = m.GUI
 	sb.Network = m.Network
 	sb.X11 = m.X11
+	sb.Caps = m.Sandbox
 	sb.DelegateLibs = m.HostContract.Delegate
 	sb.Layers = appinstall.CellDirs(home, m.Mods)
 	if err := sb.Run(); err != nil {

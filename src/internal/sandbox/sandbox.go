@@ -44,6 +44,12 @@ type Sandbox struct {
 	// inferiores del overlay, la más baja primero): el árbol (A) queda encima de
 	// ellas (C, p. ej. celdas). El host (S) aporta libs vía /usr.
 	Layers []string
+	// Caps are extra host capabilities granted (opt-in): "system-bus"
+	// (lets the filtered system D-Bus through for the allowed names),
+	// "libvirt" (exposes /run/libvirt) and "kvm" (exposes /dev/kvm).
+	// Caps son capacidades extra del host concedidas (opt-in): "system-bus",
+	// "libvirt" (/run/libvirt) y "kvm" (/dev/kvm).
+	Caps []string
 
 	// X11 opts the app into the X11 socket (and DISPLAY/xauth). Off by default:
 	// GUI apps are expected to use Wayland and xdg-desktop-portal.
@@ -276,6 +282,17 @@ func (s *Sandbox) useX11() bool {
 	return os.Getenv("WAYLAND_DISPLAY") == "" && os.Getenv("DISPLAY") != ""
 }
 
+// hasCap reports whether an opt-in capability was granted.
+// hasCap indica si se concedió una capacidad opt-in.
+func (s *Sandbox) hasCap(c string) bool {
+	for _, x := range s.Caps {
+		if x == c {
+			return true
+		}
+	}
+	return false
+}
+
 // appMount returns the /app mount: a layered overlay (A over C) when the app
 // has lower layers, else a plain read-only bind. In bwrap later --overlay-src
 // entries sit on top, so the app tree (A) is added last.
@@ -443,6 +460,19 @@ func (s *Sandbox) addGUISupport(args *[]string) {
 		*args = append(*args, "--setenv", "DBUS_SYSTEM_BUS_ADDRESS", "unix:path="+s.systemProxy)
 	} else if _, err := os.Stat("/run/dbus/system_bus_socket"); err == nil {
 		*args = append(*args, "--ro-bind", "/run/dbus/system_bus_socket", "/run/dbus/system_bus_socket")
+	}
+
+	// Opt-in VM capabilities (libvirt/KVM) — for apps like GNOME Boxes.
+	// Capacidades de VM opt-in (libvirt/KVM) — para apps como GNOME Boxes.
+	if s.hasCap("libvirt") {
+		if _, err := os.Stat("/run/libvirt"); err == nil {
+			*args = append(*args, "--ro-bind-try", "/run/libvirt", "/run/libvirt")
+		}
+	}
+	if s.hasCap("kvm") {
+		if _, err := os.Stat("/dev/kvm"); err == nil {
+			*args = append(*args, "--dev-bind", "/dev/kvm", "/dev/kvm")
+		}
 	}
 
 	for _, d := range []string{

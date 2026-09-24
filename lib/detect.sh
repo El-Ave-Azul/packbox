@@ -32,6 +32,7 @@ CURRENT_PACK_MODE=2
 CURRENT_BUNDLE_DIR=""
 CURRENT_NETWORK="false"
 CURRENT_MODS=""
+CURRENT_SANDBOX=""
 CURRENT_ICON=""
 CURRENT_CATEGORIES=""
 # Icono y categoría de cada app, tomados del .desktop original (clave = binario).
@@ -82,6 +83,21 @@ resolve_elf() {
         [[ -f "$p" && -x "$p" ]] || continue
         file -b "$p" 2>/dev/null | grep -q ELF && { echo "$p"; return 0; }
     done < <(grep -oE '/(usr|opt|lib|bin)[A-Za-z0-9_./+-]*' "$b" 2>/dev/null | sort -u)
+    return 1
+}
+
+# sandbox_suggests <bin> — 0 si la app parece necesitar servicios de VM
+# (libvirt/KVM): su nombre lo delata o enlaza libvirt.
+# sandbox_suggests <bin> — 0 if the app seems to need VM services
+# (libvirt/KVM): its name gives it away or it links libvirt.
+sandbox_suggests() {
+    local bin="$1" b
+    [[ -z "$bin" ]] && return 1
+    b=$(basename "$bin" | tr '[:upper:]' '[:lower:]')
+    case "$b" in
+        *boxes* | *virt-manager* | *virt-install* | *libvirt* | *qemu* | *virtualbox* | *vmware*) return 0 ;;
+    esac
+    ldd "$bin" 2>/dev/null | grep -qi libvirt && return 0
     return 1
 }
 
@@ -810,6 +826,22 @@ configure_pack() {
     else
         CURRENT_NETWORK="false"
         det "$(_tt L_NETWORK_OFF "Red: desactivada (aislada)")"
+    fi
+
+    # ─── Capacidades de sandbox (solo apps tipo VM) ─────────────────────────
+    # ─── Sandbox capabilities (VM apps only) ────────────────────────────────
+    CURRENT_SANDBOX=""
+    local sanalf
+    sanalf=$(resolve_elf "$p")
+    [[ -z "$sanalf" ]] && sanalf="$p"
+    if sandbox_suggests "$sanalf"; then
+        echo ""
+        echo -e "  ${BD}$(_tt L_SANDBOX "Sandbox (VM)")${N}"
+        echo -e "     ${DM}$(_tt L_SANDBOX_HINT "esta app parece necesitar libvirt/KVM")${N}"
+        if ask_yn "$(_tt L_SANDBOX_PROMPT "¿Permitir bus de sistema + /run/libvirt + /dev/kvm?")" "n"; then
+            CURRENT_SANDBOX="system-bus,libvirt,kvm"
+            det "$(_tt L_SANDBOX_ON "sandbox: system-bus, libvirt, kvm")"
+        fi
     fi
 
     # ─── Modo de empaquetado ────────────────────────────────────────────────

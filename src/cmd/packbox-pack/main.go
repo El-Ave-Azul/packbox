@@ -39,6 +39,7 @@ var strFlags = map[string]bool{
 	"--toolkit": true, "-toolkit": true,
 	"--icon": true, "-icon": true,
 	"--categories": true, "-categories": true,
+	"--sandbox": true, "-sandbox": true,
 }
 
 // pre splits positional args from flags (allows dir before flags).
@@ -74,6 +75,7 @@ func main() {
 	tk := flag.String("toolkit", "", "")
 	icon := flag.String("icon", "", "")
 	categories := flag.String("categories", "", "")
+	sbCaps := flag.String("sandbox", "", "")
 	network := flag.Bool("network", false, "")
 	x11 := flag.Bool("x11", false, "")
 	noDebug := flag.Bool("no-debug", false, "")
@@ -251,6 +253,7 @@ func main() {
 		Toolkit:       *tk,
 		Icon:          *icon,
 		Categories:    *categories,
+		Sandbox:       splitList(*sbCaps),
 		Network:       *network,
 		X11:           *x11,
 		Layers:        manifest.Layers{App: manifest.AppLayer{Files: files}},
@@ -289,4 +292,16 @@ func findMainBin(binDir string) string {
 		return nil
 	})
 	return big
+}
+
+// splitList splits a comma-separated list, trimming blanks.
+// splitList parte una lista separada por comas, ignorando vacíos.
+func splitList(s string) []string {
+	var out []string
+	for _, p := range strings.Split(s, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

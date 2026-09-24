@@ -63,6 +63,9 @@ invoke_pack() {
     # The app's real icon and categories (from the original .desktop), if known.
     [[ -n "${CURRENT_ICON:-}" ]] && args+=(--icon "$CURRENT_ICON")
     [[ -n "${CURRENT_CATEGORIES:-}" ]] && args+=(--categories "$CURRENT_CATEGORIES")
+    # Capacidades de sandbox opt-in (system-bus/libvirt/kvm), si las hay.
+    # Opt-in sandbox capabilities (system-bus/libvirt/kvm), if any.
+    [[ -n "${CURRENT_SANDBOX:-}" ]] && args+=(--sandbox "$CURRENT_SANDBOX")
     "$PACKBOX_BIN_PACK" "${args[@]}" "$wd"
 }
 
