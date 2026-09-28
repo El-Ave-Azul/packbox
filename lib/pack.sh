@@ -139,11 +139,22 @@ pack_normal() {
     det "System: $lsys  Private: $lpriv"
     local ep
     if [[ $lpriv -gt 0 ]]; then
-        # Libs privadas -> celdas (una por lib), referenciadas en el manifiesto.
-        # Private libs -> cells (one per lib), referenced in the manifest.
-        local cells
-        cells=$("$PACKBOX_BIN_MODULE" cell "${plibs[@]}" 2>/dev/null | paste -sd, -)
-        [[ -n "$cells" ]] && CURRENT_MODS="${CURRENT_MODS:+$CURRENT_MODS,}$cells"
+        if [[ -n "${CURRENT_NO_CELLS:-}" ]]; then
+            # Sin celdas: libs directas al árbol (más simple; el CAS las comparte
+            # igual entre apps).
+            # No cells: libs straight into the tree (simpler; the CAS shares them
+            # across apps anyway).
+            mkdir -p "$wd/lib"
+            local lpx
+            for lpx in "${plibs[@]}"; do cp -L "$lpx" "$wd/lib/" 2>/dev/null || true; done
+            det "$(_tt L_LIBS_DIRECT "libs empaquetadas directamente")"
+        else
+            # Libs privadas -> celdas (una por lib), referenciadas en el manifiesto.
+            # Private libs -> cells (one per lib), referenced in the manifest.
+            local cells
+            cells=$("$PACKBOX_BIN_MODULE" cell "${plibs[@]}" 2>/dev/null | paste -sd, -)
+            [[ -n "$cells" ]] && CURRENT_MODS="${CURRENT_MODS:+$CURRENT_MODS,}$cells"
+        fi
         launcher_simple "$wd/bin/launcher.sh" "$bn"
         ep="/app/bin/launcher.sh"
     else
@@ -196,14 +207,23 @@ pack_portable() {
     tlh=$(hs "$tls")
     local ep
     if [[ $lb -gt 0 ]]; then
-        # Una celda por lib no universal: la app las declara y el instalador
-        # las resuelve/enlaza -> reuso entre apps y capa A mínima.
-        # One cell per non-universal lib: the app declares them and install
-        # resolves/links them -> cross-app reuse and a minimal A layer.
-        local cells
-        cells=$("$PACKBOX_BIN_MODULE" cell "${libs[@]}" 2>/dev/null | paste -sd, -)
-        [[ -n "$cells" ]] && CURRENT_MODS="${CURRENT_MODS:+$CURRENT_MODS,}$cells"
-        ok "Cells: $lb ($tlh)"
+        if [[ -n "${CURRENT_NO_CELLS:-}" ]]; then
+            # Sin celdas: libs directas al árbol.
+            # No cells: libs straight into the tree.
+            mkdir -p "$wd/lib"
+            local lpx
+            for lpx in "${libs[@]}"; do cp -L "$lpx" "$wd/lib/" 2>/dev/null || true; done
+            det "$(_tt L_LIBS_DIRECT "libs empaquetadas directamente")"
+        else
+            # Una celda por lib no universal: la app las declara y el instalador
+            # las resuelve/enlaza -> reuso entre apps y capa A mínima.
+            # One cell per non-universal lib: the app declares them and install
+            # resolves/links them -> cross-app reuse and a minimal A layer.
+            local cells
+            cells=$("$PACKBOX_BIN_MODULE" cell "${libs[@]}" 2>/dev/null | paste -sd, -)
+            [[ -n "$cells" ]] && CURRENT_MODS="${CURRENT_MODS:+$CURRENT_MODS,}$cells"
+            ok "Cells: $lb ($tlh)"
+        fi
         launcher_simple "$wd/bin/launcher.sh" "$bn"
         ep="/app/bin/launcher.sh"
     else
