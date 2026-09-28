@@ -35,7 +35,11 @@ is_universal() {
 # get_libs <bin> — prints "lib|path" per dependency.
 get_libs() {
     local o
-    o=$(ldd "$1" 2>/dev/null || true)
+    # Con el LD_LIBRARY_PATH de la app (si lo trae), ldd resuelve sus libs
+    # privadas; sin él salen como "=> not found" y se perdían.
+    # With the app's LD_LIBRARY_PATH (if any), ldd resolves its private libs;
+    # without it they show as "=> not found" and were lost.
+    o=$(LD_LIBRARY_PATH="${2:-}" ldd "$1" 2>/dev/null || true)
     while IFS= read -r line; do
         local lib p
         lib=$(echo "$line" | awk '{print $1}')
@@ -134,7 +138,7 @@ pack_normal() {
         else
             plibs+=("$lp"); lpriv=$((lpriv + 1))
         fi
-    done < <(get_libs "$anal")
+    done < <(get_libs "$anal" "${CURRENT_LDLP:-}")
     warn_no_libs "$anal" "$lpriv"
     det "System: $lsys  Private: $lpriv"
     local ep
@@ -201,7 +205,7 @@ pack_portable() {
         ls=$(stat -c%s "$lp" 2>/dev/null || echo 0)
         tls=$((tls + ls))
         lb=$((lb + 1))
-    done < <(get_libs "$anal")
+    done < <(get_libs "$anal" "${CURRENT_LDLP:-}")
     warn_no_libs "$anal" "$lb"
     local tlh
     tlh=$(hs "$tls")

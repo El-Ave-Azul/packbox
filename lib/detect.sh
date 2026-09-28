@@ -39,6 +39,7 @@ CURRENT_NO_CELLS="${PACKBOX_NO_CELLS:-}"
 CURRENT_SANDBOX=""
 CURRENT_ICON=""
 CURRENT_CATEGORIES=""
+CURRENT_LDLP=""
 # Icono y categoría de cada app, tomados del .desktop original (clave = binario).
 # Icon and category per app, taken from the original .desktop (key = binary).
 declare -gA ICON_OF=()
@@ -46,6 +47,9 @@ declare -gA CAT_OF=()
 # GUI/CLI por app, del .desktop original (Terminal=true → CLI). Clave = binario.
 # GUI/CLI per app, from the original .desktop (Terminal=true → CLI). Key = binary.
 declare -gA GUI_OF=()
+# LD_LIBRARY_PATH con el que se lanza cada app (de su .desktop), clave = binario.
+# LD_LIBRARY_PATH the app is launched with (from its .desktop), key = binary.
+declare -gA LDLP_OF=()
 
 # ─── Icono del sistema ──────────────────────────────────────────────────────
 # ─── System icon ────────────────────────────────────────────────────────────
@@ -102,6 +106,15 @@ sandbox_suggests() {
         *boxes* | *virt-manager* | *virt-install* | *libvirt* | *qemu* | *virtualbox* | *vmware*) return 0 ;;
     esac
     ldd "$bin" 2>/dev/null | grep -qi libvirt && return 0
+    return 1
+}
+
+# app_ldpath <bin> — LD_LIBRARY_PATH que la app necesita, leído del wrapper.
+# app_ldpath <bin> — LD_LIBRARY_PATH the app needs, read from the wrapper.
+app_ldpath() {
+    local v
+    v=$(grep -ohE 'LD_LIBRARY_PATH=[^ :"'"'"']+' "$1" 2>/dev/null | head -1 | cut -d= -f2-)
+    [[ -n "$v" ]] && { echo "$v"; return 0; }
     return 1
 }
 
@@ -514,12 +527,17 @@ scan_desktop() {
         while IFS= read -r df; do
             n=$((n + 1))
             progress "$n" "$tot" "desktop"
-            local name="" ec="" cat="" nd="" icon="" term=""
+            local name="" ec="" cat="" nd="" icon="" term="" ldlp=""
             local ln
             while IFS= read -r ln; do
                 case "$ln" in
                     Name=*) [[ -z "$name" ]] && name="${ln#Name=}" ;;
-                    Exec=*) [[ -z "$ec" ]] && ec="${ln#Exec=}" ;;
+                    Exec=*)
+                        [[ -z "$ec" ]] && ec="${ln#Exec=}"
+                        local lv
+                        lv=$(grep -oE 'LD_LIBRARY_PATH=[^ :"]+' <<< "$ln" | head -1)
+                        [[ -n "$lv" && -z "$ldlp" ]] && ldlp="${lv#LD_LIBRARY_PATH=}"
+                        ;;
                     Categories=*) cat="${ln#Categories=}" ;;
                     Icon=*) icon="${ln#Icon=}" ;;
                     Terminal=*) term="${ln#Terminal=}" ;;
@@ -573,6 +591,7 @@ scan_desktop() {
             # The app's real icon and categories (.desktop), for the generated
             # menu entry.
             [[ -n "$cat" ]] && CAT_OF[$bp]="$cat"
+            [[ -n "$ldlp" ]] && LDLP_OF[$bp]="$ldlp"
             local iconp=""
             [[ -n "$icon" ]] && iconp=$(resolve_icon "$icon")
             [[ -n "$iconp" ]] && ICON_OF[$bp]="$iconp"
@@ -812,6 +831,8 @@ configure_pack() {
     # Icono/categoría reales de la app (vacíos si no hay .desktop).
     # The app's real icon/categories (empty if there is no .desktop).
     CURRENT_ICON="${ICON_OF[$p]:-}"
+    CURRENT_LDLP="${LDLP_OF[$p]:-}"
+    [[ -z "$CURRENT_LDLP" ]] && CURRENT_LDLP="$(app_ldpath "$p" || true)"
     CURRENT_CATEGORIES="${CAT_OF[$p]:-}"
 
     # ─── Pregunta de red ────────────────────────────────────────────────────
