@@ -176,7 +176,7 @@ if command -v btop >/dev/null 2>&1; then
     flow=$( { echo 1; echo b; echo btop; echo 1
               echo; echo; echo; echo
               echo n; echo 2
-              echo; echo; echo; echo
+              echo; echo; echo
               echo 0
             } | TERM=xterm timeout 240 "$ROOT/packbox-packager.sh" 2>&1 \
               | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g' )

@@ -32,6 +32,10 @@ CURRENT_PACK_MODE=2
 CURRENT_BUNDLE_DIR=""
 CURRENT_NETWORK="false"
 CURRENT_MODS=""
+# Las celdas son automáticas; PACKBOX_NO_CELLS=1 empaqueta las libs directas
+# (sin celdas) para quien lo prefiera.
+# Cells are automatic; PACKBOX_NO_CELLS=1 packages the libs directly (no cells).
+CURRENT_NO_CELLS="${PACKBOX_NO_CELLS:-}"
 CURRENT_SANDBOX=""
 CURRENT_ICON=""
 CURRENT_CATEGORIES=""
@@ -870,38 +874,11 @@ configure_pack() {
 
     # ─── Celdas (módulos reutilizables) ─────────────────────────────────────
     # ─── Cells (reusable modules) ───────────────────────────────────────────
-    echo ""
-    # Las libs se convierten en celdas AUTOMÁTICAMENTE (una por lib). Aquí:
-    # Enter = automático · n = SIN celdas (libs directas, más simple; el CAS las
-    # comparte igual) · l = listar las celdas · name@version,… añade manualmente.
-    # The libs become cells AUTOMATICALLY (one per lib). Here: Enter = automatic ·
-    # n = NO cells (libs directly, simpler; the CAS shares them anyway) · l = list
-    # the cells · name@version,… adds manually.
-    local avail=() d
-    if [[ -d "$PACKBOX_MODS_DIR" ]]; then
-        for d in "$PACKBOX_MODS_DIR"/*/*/; do
-            [[ -d "$d" ]] && avail+=("$(basename "$(dirname "$d")")@$(basename "$d")")
-        done
-    fi
-    echo -e "  ${BD}$(_tt L_CELLS "Celdas")${N}"
-    echo -e "     ${DM}$(_tt L_CELLS_HINT "Enter = automáticas por lib · n = sin celdas · l = listar")${N}"
-    while :; do
-        echo -en "  ${DM}[auto]${N}: "
-        read -r cm
-        cm="${cm// /}"
-        case "$cm" in
-            "") CURRENT_MODS=""; CURRENT_NO_CELLS=""; break ;;
-            n | N | no | NO | -) CURRENT_MODS=""; CURRENT_NO_CELLS="1"; break ;;
-            l | L)
-                if (( ${#avail[@]} > 0 )); then
-                    printf '     %s\n' "${avail[@]}"
-                else
-                    det "$(_tt L_NONE "ninguna")"
-                fi
-                ;;
-            *) CURRENT_MODS="$cm"; CURRENT_NO_CELLS=""; break ;;
-        esac
-    done
+    # Las celdas son AUTOMÁTICAS: cada lib no universal se convierte en una celda
+    # y se comparte entre apps para ahorrar espacio. Sin preguntas.
+    # Cells are AUTOMATIC: every non-universal lib becomes a cell and is shared
+    # across apps to save space. No questions asked.
+    CURRENT_MODS=""
 
     echo ""
     ok "Config OK  (net: $CURRENT_NETWORK)"
