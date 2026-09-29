@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/packbox/packbox/internal/appinstall"
 	"github.com/packbox/packbox/internal/manifest"
@@ -42,8 +43,19 @@ func main() {
 	}
 	sb.DelegateLibs = m.HostContract.Delegate
 	sb.Layers = appinstall.CellDirs(home, m.Mods)
+	// Deja un log (también desde el menú, donde no hay terminal que ver).
+	// Leaves a log (also from the menu, where no terminal shows anything).
+	logPath := filepath.Join(home, ".cache/packbox", appID+".log")
+	if err := os.MkdirAll(filepath.Dir(logPath), 0755); err == nil {
+		if f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644); err == nil {
+			defer f.Close()
+			fmt.Fprintf(f, "packbox-run %s %s\n", appID, strings.Join(args, " "))
+			sb.LogWriter = f
+		}
+	}
 	if err := sb.Run(); err != nil {
 		fmt.Printf("ERROR: %v\n", err)
+		fmt.Printf("   log: %s\n", logPath)
 		os.Exit(1)
 	}
 }

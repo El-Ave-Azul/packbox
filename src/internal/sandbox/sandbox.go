@@ -4,6 +4,7 @@ package sandbox
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -54,6 +55,11 @@ type Sandbox struct {
 	// DBusActivatable app registers it and dies if it cannot).
 	// BusName es el nombre de D-Bus que la app puede POSEER en el bus de sesión.
 	BusName string
+	// LogWriter, when set, also receives the app's output (so a failure from
+	// the menu, where there is no terminal, leaves a trace).
+	// LogWriter, si está, recibe también la salida de la app (para que un fallo
+	// desde el menú, sin terminal, deje rastro).
+	LogWriter io.Writer
 	// ROBinds are extra host dirs mounted read-only (e.g. an app bundle under
 	// /opt that the app still refers to at run time).
 	// ROBinds son dirs extra del host montados en solo lectura.
@@ -182,8 +188,14 @@ func (s *Sandbox) Run() error {
 		cmd.ExtraFiles = []*os.File{secFile}
 	}
 	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	if s.LogWriter != nil {
+		w := io.MultiWriter(os.Stdout, s.LogWriter)
+		cmd.Stdout = w
+		cmd.Stderr = w
+	} else {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
 	return cmd.Run()
 }
 
