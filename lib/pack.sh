@@ -391,6 +391,19 @@ finish_pack() {
     det "File: $pb"
     [[ -f "$pb" ]] && det "Size: $(du -h "$pb" 2>/dev/null | cut -f1)"
 
+    # #8: prueba de arranque del .pbox (acotada, en un HOME temporal).
+    # #8: bounded smoke test of the .pbox (in a throwaway HOME).
+    echo ""
+    info "$(_tt L_SMOKE "Probando que el .pbox arranque (5s)")..."
+    local smout
+    if smout=$(smoke_pbox "$pb" "$aid"); then
+        ok "$(_tt L_SMOKE_OK "arranca")"
+    else
+        warn "$(_tt L_SMOKE_FAIL "no arrancó")"
+        [[ -n "$smout" ]] && printf '%s\n' "$smout" | while IFS= read -r l; do det "$l"; done
+        det "$(_tt L_SMOKE_HINT "revisa con") $PACKBOX_BIN_VERIFY $aid"
+    fi
+
     # En modo auto: sin preguntas (instala solo si se pidió --install).
     # In auto mode: no questions (installs only if --install was passed).
     if [[ -n "${PACKBOX_AUTO:-}" ]]; then
@@ -450,6 +463,40 @@ warn_no_libs() {
     file -b "$bin" 2>/dev/null | grep -q ELF && return 0
     warn "$(_tt L_NOT_ELF "el binario no es un ELF (¿script/wrapper?): no se pueden deducir sus libs; la app puede no arrancar")"
     det "$(_tt L_NOT_ELF_HINT "busca su binario real (p. ej. /usr/lib/<app>/<app>) y empaquétalo en su lugar")"
+}
+
+
+# ─── Prueba de arranque ─────────────────────────────────────────────────────
+# ─── Smoke test ─────────────────────────────────────────────────────────────
+# smoke_pbox <pbox> <app-id> — importa el .pbox en un HOME temporal y lo ejecuta
+# acotado: 0 = arranca (salió o seguía corriendo), 1 = no arranca (imprime la
+# salida). Así el .pbox se prueba ANTES de darlo por bueno.
+# smoke_pbox <pbox> <app-id> — imports the .pbox into a throwaway HOME and runs
+# it, bounded: 0 = it starts (exited or still running), 1 = it does not (prints
+# the output). The .pbox is tested BEFORE being considered good.
+smoke_pbox() {
+    local pb="$1" aid="$2" h out rc
+    if [[ "${CURRENT_IS_GUI:-}" == "GUI" && -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+        det "$(_tt L_SMOKE_NODISP "sin pantalla: se salta la prueba de arranque")"
+        return 0
+    fi
+    [[ -f "$pb" ]] || return 1
+    if [[ -n "${PACKBOX_NO_SMOKE:-}" ]]; then
+        det "$(_tt L_SMOKE_OFF "prueba de arranque desactivada")"
+        return 0
+    fi
+    h=$(mktemp -d)
+    mkdir -p "$h/.packbox/bin"
+    cp -f "$PACKBOX_BIN_IMPORT" "$PACKBOX_BIN_RUN" "$h/.packbox/bin/" 2>/dev/null || true
+    if ! HOME="$h" "$h/.packbox/bin/packbox-import" app "$pb" >/dev/null 2>&1; then
+        rm -rf "$h"
+        return 1
+    fi
+    out=$(HOME="$h" timeout 5 "$h/.packbox/bin/packbox-run" "$aid" 2>&1); rc=$?
+    rm -rf "$h"
+    [[ $rc -eq 0 || $rc -eq 124 ]] && return 0
+    printf '%s\n' "$out" | tail -2
+    return 1
 }
 
 # run_app <app-id> — ejecuta la app y, si falla, sugiere el siguiente paso.

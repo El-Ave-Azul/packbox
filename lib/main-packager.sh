@@ -155,9 +155,10 @@ menu_pack() {
     echo -e "  ${DM}${ARROW} GUI: $gc | CLI: $cc | $(t L_BUNDLE): $bc${N}"
     echo ""
     while true; do
-        if ! select_top 15 0; then
-            break
-        fi
+        local _st=0
+        select_top 15 0 || _st=$?
+        [[ $_st -eq 2 ]] && continue   # R: re-detectar y volver a listar
+        [[ $_st -ne 0 ]] && break
         show_details
         if ! ask_yn "$(t L_PACKING)? $(t L_CONFIRM)" "s"; then
             if ask_yn "$(t L_ANOTHER)" "n"; then

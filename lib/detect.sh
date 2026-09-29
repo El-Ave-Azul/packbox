@@ -689,7 +689,7 @@ select_top() {
     done
     echo -e "  ${DM}${HR_T}${N}"
     echo ""
-    echo -e "  ${BD}N${N} número · ${Y}f${N} filtrar MB · ${Y}b${N} buscar · ${Y}r${N} más · ${Y}q${N} cancelar"
+    echo -e "  ${BD}N${N} número · ${Y}f${N} filtrar MB · ${Y}b${N} buscar · ${Y}r${N} más · ${Y}R${N} re-detectar · ${Y}q${N} cancelar"
     echo ""
 
     while true; do
@@ -707,7 +707,13 @@ select_top() {
                 return $?
                 ;;
             b|B) if search_app; then return 0; fi ;;
-            r|R) select_top "$((limit * 2))" "$minb"; return $? ;;
+            r) select_top "$((limit * 2))" "$minb"; return $? ;;
+            R|d)
+                # Re-detecta (por si instalaste/desinstalaste algo) y vuelve a listar.
+                # Re-detect (in case you installed/removed something) and relist.
+                detect_all
+                return 2
+                ;;
             [0-9]*)
                 if [[ "$c" -ge 1 && "$c" -le "${#cand[@]}" ]]; then
                     CURRENT_BIN="${cand[$((c - 1))]}"
