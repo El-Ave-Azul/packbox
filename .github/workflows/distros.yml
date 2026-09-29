@@ -1,0 +1,74 @@
+name: distros
+
+# Empaqueta y ejecuta una app real dentro de varias distribuciones, para cazar
+# diferencias entre distros (rutas de libs, wrappers, /usr/lib en Debian…) sin
+# que nadie tenga que probarlo a mano en una máquina virtual.
+# Packages and runs a real app inside several distributions, to catch
+# distro-specific differences without testing by hand on a VM.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  distro:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu 24.04
+            image: ubuntu:24.04
+            deps: >-
+              apt-get update -qq &&
+              apt-get install -y -qq bubblewrap binutils jq file xz-utils zstd
+              findutils curl ca-certificates
+            app: apt-get install -y -qq btop
+          - name: Debian 12
+            image: debian:12
+            deps: >-
+              apt-get update -qq &&
+              apt-get install -y -qq bubblewrap binutils jq file xz-utils zstd
+              findutils curl ca-certificates
+            app: apt-get install -y -qq btop
+          - name: Fedora 40
+            image: fedora:40
+            deps: >-
+              dnf install -y -q bubblewrap binutils jq file xz zstd findutils
+              curl ca-certificates
+            app: dnf install -y -q btop
+          - name: Arch
+            image: archlinux:latest
+            deps: >-
+              pacman -Sy --noconfirm --needed bubblewrap binutils jq file xz
+              zstd findutils curl ca-certificates
+            app: pacman -S --noconfirm --needed btop
+          - name: openSUSE Tumbleweed
+            image: opensuse/tumbleweed:latest
+            deps: >-
+              zypper -n install -y bubblewrap binutils jq file xz zstd findutils
+              curl ca-certificates
+            app: zypper -n install -y btop
+    steps:
+      - uses: actions/checkout@v4
+      - name: ${{ matrix.name }} · empaquetar, exportar, importar y ejecutar
+        run: |
+          docker run --privileged --rm -v "$PWD:/w" -w /w "${{ matrix.image }}" bash -lc '
+            set -e
+            ${{ matrix.deps }}
+            # La app real (con libs) que ejercita el flujo del packager; si la
+            # distro no la trae, ese paso se salta solo.
+            ${{ matrix.app }} || echo "sin btop: se salta el paso de app real"
+            # Go >= 1.22 (el de la distro puede ser más viejo), como el instalador.
+            if ! go version 2>/dev/null | grep -qE "go1\.(2[2-9]|[3-9])"; then
+              curl -fsSL https://go.dev/dl/go1.23.5.linux-amd64.tar.gz -o /tmp/go.tgz
+              tar -C /usr/local -xzf /tmp/go.tgz
+              export PATH=/usr/local/go/bin:$PATH
+            fi
+            go version
+            bwrap --version || true
+            bash tests/integration.sh
+          '
