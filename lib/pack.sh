@@ -140,6 +140,7 @@ pack_normal() {
         fi
     done < <(get_libs "$anal" "${CURRENT_LDLP:-}")
     warn_no_libs "$anal" "$lpriv"
+    preflight_libs "$anal" "${plibs[@]}" || return 1
     det "System: $lsys  Private: $lpriv"
     local ep
     if [[ $lpriv -gt 0 ]]; then
@@ -207,6 +208,7 @@ pack_portable() {
         lb=$((lb + 1))
     done < <(get_libs "$anal" "${CURRENT_LDLP:-}")
     warn_no_libs "$anal" "$lb"
+    preflight_libs "$anal" "${libs[@]}" || return 1
     local tlh
     tlh=$(hs "$tls")
     local ep
@@ -352,6 +354,34 @@ finish_pack() {
         maybe_desktop
         ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$aid"; }
     fi
+}
+
+# preflight_libs <bin> [lib-empaquetada...] — comprueba (readelf -d) que cada
+# NEEDED sea universal, esté empaquetada (-> /app/lib) o el host la sirva desde
+# un directorio bindeado. Si falta alguna, avisa con su nombre y devuelve 1.
+# preflight_libs <bin> [packaged-lib...] — checks (readelf -d) that every NEEDED
+# is universal, packaged (-> /app/lib) or served by the host from a bound dir.
+# If any is missing it names it and returns 1.
+preflight_libs() {
+    local bin="$1" x
+    shift
+    local have=" "
+    for x in "$@"; do have+="$(basename "$x") "; done
+    local son p miss=()
+    while IFS= read -r son; do
+        [[ -z "$son" ]] && continue
+        is_universal "$son" && continue
+        [[ "$have" == *" $son "* ]] && continue
+        p=$(ldconfig -p 2>/dev/null | awk -v s="$son" '$1==s{print $NF; exit}')
+        if [[ -n "$p" && -f "$p" ]]; then
+            case "$p" in /usr/* | /lib/* | /lib64/* | /bin/* | /sbin/* | /var/*) continue ;; esac
+        fi
+        miss+=("$son")
+    done < <(readelf -d "$bin" 2>/dev/null | awk '/NEEDED/{gsub(/.*\[|\].*/,"");print}')
+    ((${#miss[@]})) || return 0
+    warn "$(_tt L_PREFLIGHT "faltan libs (no empaquetadas ni del host)"): ${miss[*]}"
+    det "$(_tt L_PREFLIGHT_HINT "si la app las carga de un dir privado, reempaqueta con: LD_LIBRARY_PATH=<dir> ./packbox-packager.sh")"
+    return 1
 }
 
 # warn_no_libs <bin> <count> — si no se detectaron libs y el binario no es ELF
