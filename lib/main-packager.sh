@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034  # variables usadas por los archivos que sourcean esta librería
 # =============================================================================
 # lib/main-packager.sh — Menú del empaquetador.
 # lib/main-packager.sh — Packager menu.
@@ -9,6 +10,15 @@
 
 main_packager() {
     case "${1:-}" in
+        --auto|-a)
+            PACKBOX_AUTO=1
+            shift
+            [[ "${1:-}" == "--install" ]] && { PACKBOX_AUTO_INSTALL=1; shift; }
+            install_lang_files
+            load_lang
+            auto_pack "${1:-}"
+            return $?
+            ;;
         --lang|-l)
             select_language --force
             install_lang_files
@@ -26,6 +36,11 @@ Uso / Usage:
 Opciones / Options:
   -l, --lang        Cambiar idioma / Change language
   -h, --help        Esta ayuda / This help
+
+Sin preguntas / non-interactive:
+  -a, --auto <app>       Empaqueta esa app con valores por defecto / packs it
+  -a, --auto --all       Empaqueta todas las detectadas / packs all detected
+  -a, --auto <app> --install   Además la instala localmente / also installs it
 HELP
             return 0
             ;;
@@ -148,6 +163,32 @@ menu_pack() {
         echo ""
         ask_yn "$(t L_ANOTHER)" "n" || break
     done
+}
+
+# ─── Empaquetado automático ──────────────────────────────────────────────────
+# ─── Automatic packing ───────────────────────────────────────────────────────
+auto_pack() {
+    local want="${1:-}"
+    if [[ -z "$want" ]]; then
+        warn "uso: packbox-packager.sh --auto <app-id>|--all"
+        return 1
+    fi
+    detect_all
+    if [[ ${#APPS_SORTED[@]} -eq 0 ]]; then warn "$(t L_NO_RESULTS)"; return 1; fi
+    local b inf nm aid n=0 rc=0
+    for b in "${APPS_SORTED[@]}"; do
+        inf="${APPS_MAP[$b]}"
+        nm=$(fld "$inf" 1); aid=$(fld "$inf" 6)
+        if [[ "$want" != "--all" ]]; then
+            [[ "$want" == "$aid" || "$want" == "$nm" || "$aid" == *"$want"* || "$nm" == *"$want"* ]] || continue
+        fi
+        CURRENT_INFO="$inf"; CURRENT_BIN="$b"
+        if configure_pack; then package_real || rc=1; else rc=1; fi
+        n=$((n + 1))
+        [[ "$want" != "--all" ]] && break
+    done
+    if [[ $n -eq 0 ]]; then warn "$(_tt L_NOT_FOUND "no encontrada") : $want"; return 1; fi
+    return $rc
 }
 
 # ─── Opción 2: listar ───────────────────────────────────────────────────────

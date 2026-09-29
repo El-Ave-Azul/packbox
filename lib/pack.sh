@@ -388,6 +388,16 @@ finish_pack() {
     det "File: $pb"
     [[ -f "$pb" ]] && det "Size: $(du -h "$pb" 2>/dev/null | cut -f1)"
 
+    # En modo auto: sin preguntas (instala solo si se pidió --install).
+    # In auto mode: no questions (installs only if --install was passed).
+    if [[ -n "${PACKBOX_AUTO:-}" ]]; then
+        if [[ -n "${PACKBOX_AUTO_INSTALL:-}" ]]; then
+            "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
+            box_ok "$aid  $(t L_INSTALLED)"
+            maybe_desktop
+        fi
+        return 0
+    fi
     echo ""
     if ask_yn "$(_tt L_INSTALL_HERE "¿Instalar también en este equipo?")" "n"; then
         "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }

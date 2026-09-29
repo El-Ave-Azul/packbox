@@ -778,6 +778,34 @@ show_details() {
     local net_hint="no"
     net_suggests "$p" && net_hint="sí"
 
+    # ─── Modo automático (--auto): sin preguntas ────────────────────────────
+    # ─── Automatic mode (--auto): no questions ──────────────────────────────
+    if [[ -n "${PACKBOX_AUTO:-}" ]]; then
+        CURRENT_APP_ID=$(echo "$aid" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9.-' | sed 's/--*/-/g;s/^-//;s/-$//')
+        [[ -z "$CURRENT_APP_ID" ]] && CURRENT_APP_ID="org.app.unknown"
+        local av="1.0.0"
+        if [[ -x "$p" ]]; then
+            local v
+            v=$("$p" --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1 || true)
+            [[ -n "$v" ]] && av="$v"
+        fi
+        CURRENT_VERSION="$av"
+        CURRENT_DESC="$nm"
+        CURRENT_IS_GUI="$gui"; CURRENT_TOOLKIT="$tk"; CURRENT_BUNDLE_DIR="$bd"
+        CURRENT_ICON="${ICON_OF[$p]:-}"; CURRENT_CATEGORIES="${CAT_OF[$p]:-}"
+        CURRENT_LDLP="${LDLP_OF[$p]:-}"
+        [[ -z "$CURRENT_LDLP" ]] && CURRENT_LDLP="$(app_ldpath "$p" || true)"
+        if net_suggests "$p"; then CURRENT_NETWORK="true"; else CURRENT_NETWORK="false"; fi
+        local al
+        al=$(resolve_elf "$p")
+        [[ -z "$al" ]] && al="$p"
+        if sandbox_suggests "$al"; then CURRENT_SANDBOX="system-bus,libvirt,kvm"; else CURRENT_SANDBOX=""; fi
+        CURRENT_MODS=""
+        if [[ -n "$bd" ]]; then CURRENT_PACK_MODE=4; else CURRENT_PACK_MODE=2; fi
+        ok "Config (auto)  $CURRENT_APP_ID $CURRENT_VERSION · net:$CURRENT_NETWORK · mode:$CURRENT_PACK_MODE${CURRENT_SANDBOX:+ · sandbox:$CURRENT_SANDBOX}"
+        return 0
+    fi
+
     hdr "$(t L_APP_ID)"
     echo -e "  ${BD}Name:${N}      $nm"
     echo -e "  ${BD}Path:${N}      $p"

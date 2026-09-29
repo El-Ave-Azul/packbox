@@ -71,4 +71,11 @@ jobs:
             go version
             bwrap --version || true
             bash tests/integration.sh
+            # Modo no interactivo sobre la app real (el "empaquetar y ya").
+            mkdir -p "$HOME/.packbox/bin"
+            for d in src/cmd/*/; do
+              (cd src && go build -o "$HOME/.packbox/bin/$(basename "$d")" "./cmd/$(basename "$d")")
+            done
+            ./packbox-packager.sh --auto btop
+            test -f "$HOME/.local/share/packbox/exports/btop.pbox"
           '
