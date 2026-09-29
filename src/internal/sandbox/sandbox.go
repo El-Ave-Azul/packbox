@@ -251,6 +251,18 @@ func (s *Sandbox) bwrapArgs() ([]string, func(), error) {
 		if err != nil {
 			continue
 		}
+		// Si ya es visible por el bind de /usr (etc.) no hay que montarlo — y
+		// además montar sobre un symlink falla ("Can't mount on symlink
+		// destination"): /lib64/libz.so.1 es un enlace dentro de /lib64.
+		// If it is already visible through the /usr bind there is nothing to
+		// mount — and mounting onto a symlink fails ("Can't mount on symlink
+		// destination"): /lib64/libz.so.1 is a link inside /lib64.
+		if coveredByDirBind(lp) {
+			continue
+		}
+		if fi, err := os.Lstat(lp); err != nil || fi.Mode()&os.ModeSymlink != 0 {
+			continue
+		}
 		a = append(a, "--ro-bind", lp, lp)
 	}
 
@@ -290,6 +302,22 @@ func (s *Sandbox) useX11() bool {
 		return true
 	}
 	return os.Getenv("WAYLAND_DISPLAY") == "" && os.Getenv("DISPLAY") != ""
+}
+
+// coveredByDirBind reports whether p is already visible inside the sandbox
+// through a whole-directory bind (/usr, /lib, /lib64, /bin, /sbin, /var).
+// coveredByDirBind indica si p ya es visible en el sandbox por un bind de
+// directorio completo (/usr, /lib, /lib64, /bin, /sbin, /var).
+func coveredByDirBind(p string) bool {
+	if rp, err := filepath.EvalSymlinks(p); err == nil {
+		p = rp
+	}
+	for _, d := range []string{"/usr", "/lib", "/lib64", "/bin", "/sbin", "/var"} {
+		if p == d || strings.HasPrefix(p, d+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 // hasCap reports whether an opt-in capability was granted.
