@@ -72,13 +72,22 @@ HELP
         echo -e "  ${C}5${N}  ${BD}$(t L_5_IMPORT)${N}"
         echo -e "  ${C}6${N}  ${R}${BD}$(t L_6_UNINSTALL)${N}"
         echo -e "  ${C}7${N}  $(_tt L_7_LANG "Cambiar idioma") ${DM}($(t L_LANG_NAME))${N}"
+        echo -e "  ${C}8${N}  $(_tt L_8_VERIFY "Verificar una app")"
+        echo -e "  ${C}9${N}  $(_tt L_9_UPDATE "Actualizar una app")"
+        echo -e "  ${Y}10${N} $(_tt L_10_DIAG "Diagnóstico del entorno")"
         echo -e "  ${C}0${N}  $(t L_0_EXIT)"
         echo ""
         echo -e "  ${DM}${HR_T}${N}"
         echo ""
-        echo -en "  ${BD}> $(t L_OPTION) [0-7]: ${N}"
+        echo -en "  ${BD}> $(t L_OPTION) [0-10]: ${N}"
         local opt
-        read -r opt
+        # Sin entrada (pipe/CI agotado) → salir, no quedarse en bucle.
+        # No input left (pipe/CI exhausted) → exit, don't loop forever.
+        if ! read -r opt; then
+            echo ""
+            echo -e "  ${DM}Bye / Adiós${N}"
+            exit 0
+        fi
         case "$opt" in
             1) menu_pack ;;
             2) run_list ;;
@@ -87,6 +96,9 @@ HELP
             5) import_app ;;
             6) uninstall_apps ;;
             7) change_language ;;
+            8) run_verify ;;
+            9) run_update ;;
+            10) run_diagnose ;;
             0|q|Q)
                 echo ""
                 echo -e "  ${DM}Bye / Adiós${N}"
@@ -165,6 +177,57 @@ menu_pack() {
     done
 }
 
+# pick_app — lista las apps instaladas y devuelve el id elegido (stdout).
+# pick_app — lists the installed apps and echoes the chosen id (stdout).
+pick_app() {
+    local apps=() i=1 ad aid
+    while IFS= read -r ad; do
+        [[ -d "$ad" ]] || continue
+        aid=$(basename "$ad")
+        printf "  ${C}%3d${N}) %s\n" "$i" "$aid" >&2
+        apps+=("$aid")
+        i=$((i + 1))
+    done < <(find "$PACKBOX_APPS_DIR" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort)
+    if ((${#apps[@]} == 0)); then
+        warn "$(t L_NO_RESULTS)" >&2
+        return 1
+    fi
+    echo -en "  ${BD}> 1-${#apps[@]}, q: ${N}" >&2
+    local c
+    read -r c
+    if [[ ! "$c" =~ ^[0-9]+$ ]] || ((c < 1 || c > ${#apps[@]})); then return 1; fi
+    echo "${apps[$((c - 1))]}"
+}
+
+# ─── Opción 8: verificar ────────────────────────────────────────────────────
+run_verify() {
+    hdr "$(_tt L_8_VERIFY "Verificar una app")"
+    local aid
+    aid=$(pick_app) || { read -rp "  ENTER..."; return 1; }
+    echo ""
+    "$PACKBOX_BIN_VERIFY" "$aid"
+    read -rp "  ENTER..."
+}
+
+# ─── Opción 9: actualizar ───────────────────────────────────────────────────
+run_update() {
+    hdr "$(_tt L_9_UPDATE "Actualizar una app")"
+    local aid
+    aid=$(pick_app) || { read -rp "  ENTER..."; return 1; }
+    echo -en "  ${BD}$(_tt L_MANIFEST "manifiesto (.json)"): ${N}"
+    local mf
+    read -r mf
+    mf="${mf/#\~/$HOME}"
+    if [[ -z "$mf" || ! -f "$mf" ]]; then
+        warn "$(t L_DOES_NOT_EXIST)"
+        read -rp "  ENTER..."
+        return 1
+    fi
+    echo ""
+    "$PACKBOX_BIN_UPDATE" "$aid" "$mf"
+    read -rp "  ENTER..."
+}
+
 # ─── Empaquetado automático ──────────────────────────────────────────────────
 # ─── Automatic packing ───────────────────────────────────────────────────────
 auto_pack() {
@@ -189,6 +252,16 @@ auto_pack() {
     done
     if [[ $n -eq 0 ]]; then warn "$(_tt L_NOT_FOUND "no encontrada") : $want"; return 1; fi
     return $rc
+}
+
+# ─── Opción 10: diagnóstico ─────────────────────────────────────────────────
+run_diagnose() {
+    if [[ -x "$PACKBOX_BIN_DIAGNOSE" ]]; then
+        "$PACKBOX_BIN_DIAGNOSE"
+    else
+        warn "packbox-diagnose not found / no encontrado"
+    fi
+    read -rp "  ENTER..."
 }
 
 # ─── Opción 2: listar ───────────────────────────────────────────────────────

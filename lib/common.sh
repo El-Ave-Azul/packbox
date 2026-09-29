@@ -53,6 +53,15 @@ tmpdir() {
     echo "$d"
 }
 
+# ─── Firma ──────────────────────────────────────────────────────────────────
+# ─── Signing ────────────────────────────────────────────────────────────────
+# sign_flag — imprime "--sign" si hay clave de firma (si no, nada).
+# sign_flag — prints "--sign" when a signing key exists (nothing otherwise).
+sign_flag() {
+    [[ -f "${PACKBOX_SIGNING_KEY:-$HOME/.config/packbox/signing.key}" ]] && echo "--sign"
+    return 0
+}
+
 # ─── Input ───────────────────────────────────────────────────────────────────
 # ─── Input ───────────────────────────────────────────────────────────────────
 # ask_yn <prompt> [default] — pregunta sí/no. Default: n.

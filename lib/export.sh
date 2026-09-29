@@ -61,7 +61,7 @@ export_app() {
     echo ""
     local signflag=""
     if [[ -f "$HOME/.config/packbox/signing.key" ]]; then
-        ask_yn "$(_tt L_SIGN_Q "¿Firmar el paquete?")" "n" && signflag="--sign"
+        ask_yn "$(_tt L_SIGN_Q "¿Firmar el paquete?")" "s" && signflag="--sign"
     else
         det "$(_tt L_NO_KEY "sin clave de firma (packbox-sign keygen)")"
     fi

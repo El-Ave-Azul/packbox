@@ -379,7 +379,10 @@ finish_pack() {
     local wd="$1" label="${2:-}" aid="$CURRENT_APP_ID"
     echo ""
     info "$(t L_4_EXPORT)..."
-    if ! "$PACKBOX_BIN_EXPORT" app "$wd"; then
+    # $(sign_flag) va sin comillas a propósito: o se expande a --sign o a nada.
+    # $(sign_flag) is intentionally unquoted: it expands to --sign or nothing.
+    # shellcheck disable=SC2046
+    if ! "$PACKBOX_BIN_EXPORT" $(sign_flag) app "$wd"; then
         fail "export failed"
         return 1
     fi
