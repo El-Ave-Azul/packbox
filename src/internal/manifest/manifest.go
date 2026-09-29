@@ -29,7 +29,10 @@ type Manifest struct {
 	// "system-bus", "libvirt", "kvm" for VM apps like GNOME Boxes.
 	// Sandbox lista capacidades extra del host a conceder (opt-in), p. ej.
 	// "system-bus", "libvirt", "kvm" para apps de VM como GNOME Boxes.
-	Sandbox      []string     `json:"sandbox,omitempty"`
+	Sandbox []string `json:"sandbox,omitempty"`
+	// BundleDir is the app bundle root (/opt/<app>), if any.
+	// BundleDir es la raíz del bundle de la app (/opt/<app>), si la hay.
+	BundleDir    string       `json:"bundle_dir,omitempty"`
 	Layers       Layers       `json:"layers"`
 	Mods         []string     `json:"mods"`
 	HostContract HostContract `json:"host_contract"`

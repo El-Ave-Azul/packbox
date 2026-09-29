@@ -33,6 +33,38 @@ is_universal() {
 # ─── Extract libs from a binary ─────────────────────────────────────────────
 # get_libs <bin> — imprime "lib|path" por cada dependencia.
 # get_libs <bin> — prints "lib|path" per dependency.
+# lib_path <soname> [bin] [ldpath] — resuelve una lib de forma ÚNICA: LD_LIBRARY_PATH
+# de la app, RPATH/RUNPATH del binario (con $ORIGIN), su propio dir y ../lib,
+# dirs multiarch y, por último, ldconfig. Es lo que hace que funcione en
+# cualquier distro sin casos especiales.
+# lib_path <soname> [bin] [ldpath] — resolves a lib in ONE place: the app's
+# LD_LIBRARY_PATH, the binary's RPATH/RUNPATH ($ORIGIN aware), its own dir and
+# ../lib, multiarch dirs, and finally ldconfig. This is what makes it work on
+# any distro without special cases.
+lib_path() {
+    local son="$1" bin="${2:-}" ld="${3:-}" bdir="" d p rp x
+    [[ -n "$bin" ]] && bdir=$(dirname "$(readlink -f "$bin" 2>/dev/null || echo "$bin")")
+    local IFS=:
+    for x in ${ld}; do
+        [[ -n "$x" && -f "$x/$son" ]] && { echo "$x/$son"; return 0; }
+    done
+    if [[ -n "$bin" ]]; then
+        while IFS= read -r rp; do
+            rp="${rp//\$ORIGIN/$bdir}"
+            for x in ${rp}; do
+                [[ -n "$x" && -f "$x/$son" ]] && { echo "$x/$son"; return 0; }
+            done
+        done < <(readelf -d "$bin" 2>/dev/null | awk '/RPATH|RUNPATH/{gsub(/.*\[|\].*/,"");print}')
+    fi
+    for d in "$bdir" "${bdir%/bin}/lib" /usr/lib64 /lib64 \
+        /usr/lib/x86_64-linux-gnu /lib/x86_64-linux-gnu /usr/lib /lib; do
+        p="$d/$son"
+        [[ -n "$d" && -f "$p" ]] && { echo "$p"; return 0; }
+    done
+    p=$(ldconfig -p 2>/dev/null | awk -v s="$son" '$1==s{print $NF; exit}')
+    [[ -n "$p" && -f "$p" ]] && { echo "$p"; return 0; }
+    return 1
+}
 get_libs() {
     local o
     # Con el LD_LIBRARY_PATH de la app (si lo trae), ldd resuelve sus libs
@@ -48,6 +80,15 @@ get_libs() {
         [[ -z "$p" || ! -f "$p" ]] && continue
         echo "$lib|$p"
     done < <(echo "$o" | grep "=>")
+    # NEEDED que ldd no resolvió (not found): resuélvelos con lib_path.
+    # NEEDED that ldd did not resolve (not found): resolve them with lib_path.
+    local son rp
+    while IFS= read -r son; do
+        [[ -z "$son" ]] && continue
+        echo "$o" | grep -qE "[[:space:]]$son =>" && continue
+        rp=$(lib_path "$son" "$1" "${2:-}") || continue
+        echo "$son|$rp"
+    done < <(readelf -d "$1" 2>/dev/null | awk '/NEEDED/{gsub(/.*\[|\].*/,"");print}')
 }
 
 # ─── Invocación de packbox-pack ─────────────────────────────────────────────

@@ -50,6 +50,10 @@ type Sandbox struct {
 	// Caps son capacidades extra del host concedidas (opt-in): "system-bus",
 	// "libvirt" (/run/libvirt) y "kvm" (/dev/kvm).
 	Caps []string
+	// ROBinds are extra host dirs mounted read-only (e.g. an app bundle under
+	// /opt that the app still refers to at run time).
+	// ROBinds son dirs extra del host montados en solo lectura.
+	ROBinds []string
 
 	// X11 opts the app into the X11 socket (and DISPLAY/xauth). Off by default:
 	// GUI apps are expected to use Wayland and xdg-desktop-portal.
@@ -233,6 +237,12 @@ func (s *Sandbox) bwrapArgs() ([]string, func(), error) {
 	} {
 		if v := os.Getenv(k); v != "" {
 			a = append(a, "--setenv", k, v)
+		}
+	}
+
+	for _, d := range s.ROBinds {
+		if _, err := os.Stat(d); err == nil {
+			a = append(a, "--ro-bind-try", d, d)
 		}
 	}
 
