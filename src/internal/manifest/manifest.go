@@ -32,7 +32,10 @@ type Manifest struct {
 	Sandbox []string `json:"sandbox,omitempty"`
 	// BundleDir is the app bundle root (/opt/<app>), if any.
 	// BundleDir es la raíz del bundle de la app (/opt/<app>), si la hay.
-	BundleDir    string       `json:"bundle_dir,omitempty"`
+	BundleDir string `json:"bundle_dir,omitempty"`
+	// BusName is the D-Bus name the app owns (from a DBusActivatable .desktop).
+	// BusName es el nombre de D-Bus que posee la app (de un .desktop DBusActivatable).
+	BusName      string       `json:"bus_name,omitempty"`
 	Layers       Layers       `json:"layers"`
 	Mods         []string     `json:"mods"`
 	HostContract HostContract `json:"host_contract"`

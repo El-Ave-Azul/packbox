@@ -36,6 +36,7 @@ func main() {
 	sb.Network = m.Network
 	sb.X11 = m.X11
 	sb.Caps = m.Sandbox
+	sb.BusName = m.BusName
 	if m.BundleDir != "" {
 		sb.ROBinds = []string{m.BundleDir}
 	}

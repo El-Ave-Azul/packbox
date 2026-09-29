@@ -111,6 +111,9 @@ invoke_pack() {
     # Capacidades de sandbox opt-in (system-bus/libvirt/kvm), si las hay.
     # Opt-in sandbox capabilities (system-bus/libvirt/kvm), if any.
     [[ -n "${CURRENT_SANDBOX:-}" ]] && args+=(--sandbox "$CURRENT_SANDBOX")
+    # Nombre de bus D-Bus que la app posee (apps DBusActivatable).
+    # D-Bus name the app owns (DBusActivatable apps).
+    [[ -n "${CURRENT_BUS:-}" ]] && args+=(--dbus-name "$CURRENT_BUS")
     "$PACKBOX_BIN_PACK" "${args[@]}" "$wd"
 }
 

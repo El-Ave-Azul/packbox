@@ -50,6 +50,10 @@ type Sandbox struct {
 	// Caps son capacidades extra del host concedidas (opt-in): "system-bus",
 	// "libvirt" (/run/libvirt) y "kvm" (/dev/kvm).
 	Caps []string
+	// BusName is the D-Bus name the app may OWN on the session bus (a
+	// DBusActivatable app registers it and dies if it cannot).
+	// BusName es el nombre de D-Bus que la app puede POSEER en el bus de sesión.
+	BusName string
 	// ROBinds are extra host dirs mounted read-only (e.g. an app bundle under
 	// /opt that the app still refers to at run time).
 	// ROBinds son dirs extra del host montados en solo lectura.
@@ -80,8 +84,11 @@ type Sandbox struct {
 	// son los nombres a los que puede hablar (nil = default seguro);
 	// NoDBusProxy desactiva el filtrado (bindea los sockets reales).
 	AllowSessionTalk []string
-	AllowSystemTalk  []string
-	NoDBusProxy      bool
+	// AllowSessionOwn overrides the session-bus owned names (default: BusName).
+	// AllowSessionOwn sustituye los nombres poseídos en el bus (por defecto: BusName).
+	AllowSessionOwn []string
+	AllowSystemTalk []string
+	NoDBusProxy     bool
 
 	// sessionProxy/systemProxy are the sandbox-visible proxy socket paths, set
 	// by Run before bwrapArgs.

@@ -117,7 +117,11 @@ func (s *Sandbox) sessionPolicy() busPolicy {
 			"ca.desrt.dconf",
 		}
 	}
-	return busPolicy{Talk: talk}
+	own := s.AllowSessionOwn
+	if own == nil && s.BusName != "" {
+		own = []string{s.BusName, s.BusName + ".*"}
+	}
+	return busPolicy{Talk: talk, Own: own}
 }
 
 // systemPolicy returns the system-bus policy. By default nothing is allowed; the

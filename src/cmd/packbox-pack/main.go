@@ -40,6 +40,7 @@ var strFlags = map[string]bool{
 	"--icon": true, "-icon": true,
 	"--categories": true, "-categories": true,
 	"--sandbox": true, "-sandbox": true,
+	"--dbus-name": true, "-dbus-name": true,
 }
 
 // pre splits positional args from flags (allows dir before flags).
@@ -76,6 +77,7 @@ func main() {
 	icon := flag.String("icon", "", "")
 	categories := flag.String("categories", "", "")
 	sbCaps := flag.String("sandbox", "", "")
+	busName := flag.String("dbus-name", "", "")
 	network := flag.Bool("network", false, "")
 	x11 := flag.Bool("x11", false, "")
 	noDebug := flag.Bool("no-debug", false, "")
@@ -254,6 +256,7 @@ func main() {
 		Icon:          *icon,
 		Categories:    *categories,
 		Sandbox:       splitList(*sbCaps),
+		BusName:       *busName,
 		Network:       *network,
 		X11:           *x11,
 		Layers:        manifest.Layers{App: manifest.AppLayer{Files: files}},

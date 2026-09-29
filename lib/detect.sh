@@ -37,6 +37,7 @@ CURRENT_MODS=""
 # Cells are automatic; PACKBOX_NO_CELLS=1 packages the libs directly (no cells).
 CURRENT_NO_CELLS="${PACKBOX_NO_CELLS:-}"
 CURRENT_SANDBOX=""
+CURRENT_BUS=""
 CURRENT_ICON=""
 CURRENT_CATEGORIES=""
 CURRENT_LDLP=""
@@ -47,6 +48,9 @@ declare -gA CAT_OF=()
 # GUI/CLI por app, del .desktop original (Terminal=true → CLI). Clave = binario.
 # GUI/CLI per app, from the original .desktop (Terminal=true → CLI). Key = binary.
 declare -gA GUI_OF=()
+# Nombre de bus D-Bus que la app posee (de un .desktop DBusActivatable).
+# D-Bus name the app owns (from a DBusActivatable .desktop).
+declare -gA BUS_OF=()
 # LD_LIBRARY_PATH con el que se lanza cada app (de su .desktop), clave = binario.
 # LD_LIBRARY_PATH the app is launched with (from its .desktop), key = binary.
 declare -gA LDLP_OF=()
@@ -527,7 +531,7 @@ scan_desktop() {
         while IFS= read -r df; do
             n=$((n + 1))
             progress "$n" "$tot" "desktop"
-            local name="" ec="" cat="" nd="" icon="" term="" ldlp=""
+            local name="" ec="" cat="" nd="" icon="" term="" ldlp="" dbusact=""
             local ln
             while IFS= read -r ln; do
                 case "$ln" in
@@ -541,6 +545,7 @@ scan_desktop() {
                     Categories=*) cat="${ln#Categories=}" ;;
                     Icon=*) icon="${ln#Icon=}" ;;
                     Terminal=*) term="${ln#Terminal=}" ;;
+                    DBusActivatable=true) dbusact="1" ;;
                     NoDisplay=true) nd="true" ;;
                 esac
             done < "$df"
@@ -592,6 +597,9 @@ scan_desktop() {
             # menu entry.
             [[ -n "$cat" ]] && CAT_OF[$bp]="$cat"
             [[ -n "$ldlp" ]] && LDLP_OF[$bp]="$ldlp"
+            # DBusActivatable → el bus es el nombre del .desktop sin extensión.
+            # DBusActivatable → the bus name is the .desktop basename.
+            [[ -n "$dbusact" ]] && BUS_OF[$bp]="$(basename "$df" .desktop)"
             local iconp=""
             [[ -n "$icon" ]] && iconp=$(resolve_icon "$icon")
             [[ -n "$iconp" ]] && ICON_OF[$bp]="$iconp"
@@ -800,6 +808,7 @@ show_details() {
         CURRENT_IS_GUI="$gui"; CURRENT_TOOLKIT="$tk"; CURRENT_BUNDLE_DIR="$bd"
         CURRENT_ICON="${ICON_OF[$p]:-}"; CURRENT_CATEGORIES="${CAT_OF[$p]:-}"
         CURRENT_LDLP="${LDLP_OF[$p]:-}"
+    CURRENT_BUS="${BUS_OF[$p]:-}"
         [[ -z "$CURRENT_LDLP" ]] && CURRENT_LDLP="$(app_ldpath "$p" || true)"
         if net_suggests "$p"; then CURRENT_NETWORK="true"; else CURRENT_NETWORK="false"; fi
         local al
