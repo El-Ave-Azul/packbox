@@ -393,7 +393,7 @@ finish_pack() {
         "$PACKBOX_BIN_INSTALL" "$wd/manifest.json" || { fail "install failed"; return 1; }
         box_ok "$aid  $(t L_INSTALLED)"
         maybe_desktop
-        ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$aid"; }
+        ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; run_app "$aid"; }
     fi
 }
 
@@ -420,8 +420,10 @@ preflight_libs() {
         miss+=("$son")
     done < <(readelf -d "$bin" 2>/dev/null | awk '/NEEDED/{gsub(/.*\[|\].*/,"");print}')
     ((${#miss[@]})) || return 0
-    warn "$(_tt L_PREFLIGHT "faltan libs (no empaquetadas ni del host)"): ${miss[*]}"
-    det "$(_tt L_PREFLIGHT_HINT "si la app las carga de un dir privado, reempaqueta con: LD_LIBRARY_PATH=<dir> ./packbox-packager.sh")"
+    warn "$CURRENT_APP_ID: $(_tt L_PREFLIGHT "faltan libs y la app no arrancaría") → ${miss[*]}"
+    det "$(_tt L_PREFLIGHT_WHY "no las encuentro ni en el sistema ni en los directorios de la app")"
+    det "$(_tt L_PREFLIGHT_FIX "si están en un directorio privado, reempaqueta con") LD_LIBRARY_PATH=<dir-de-libs> ./packbox-packager.sh"
+    det "$(_tt L_PREFLIGHT_CHECK "y comprueba que estén instaladas") ldconfig -p | grep ${miss[0]}"
     return 1
 }
 
@@ -434,6 +436,17 @@ warn_no_libs() {
     [[ -z "$bin" || "$n" -gt 0 ]] && return 0
     file -b "$bin" 2>/dev/null | grep -q ELF && return 0
     warn "$(_tt L_NOT_ELF "el binario no es un ELF (¿script/wrapper?): no se pueden deducir sus libs; la app puede no arrancar")"
+    det "$(_tt L_NOT_ELF_HINT "busca su binario real (p. ej. /usr/lib/<app>/<app>) y empaquétalo en su lugar")"
+}
+
+# run_app <app-id> — ejecuta la app y, si falla, sugiere el siguiente paso.
+# run_app <app-id> — runs the app and, on failure, suggests the next step.
+run_app() {
+    local aid="$1"
+    "$PACKBOX_BIN_RUN" "$aid" && return 0
+    local rc=$?
+    [[ $rc -eq 127 ]] && det "$(_tt L_RUN_HINT "faltan libs en runtime; revisa con") $PACKBOX_BIN_VERIFY $aid"
+    return "$rc"
 }
 
 # ─── Pregunta sobre entrada de menú ─────────────────────────────────────────

@@ -120,7 +120,7 @@ import_app() {
         fi
     fi
 
-    ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; "$PACKBOX_BIN_RUN" "$an"; }
+    ask_yn "$(t L_EXEC_NOW)" "n" && { echo ""; run_app "$an"; }
     read -rp "  ENTER..."
 }
 
