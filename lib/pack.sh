@@ -39,7 +39,7 @@ get_libs() {
     # privadas; sin él salen como "=> not found" y se perdían.
     # With the app's LD_LIBRARY_PATH (if any), ldd resolves its private libs;
     # without it they show as "=> not found" and were lost.
-    o=$(LD_LIBRARY_PATH="${2:-}" ldd "$1" 2>/dev/null || true)
+    o=$(LD_LIBRARY_PATH="${2:-${LD_LIBRARY_PATH:-}}" ldd "$1" 2>/dev/null || true)
     while IFS= read -r line; do
         local lib p
         lib=$(echo "$line" | awk '{print $1}')
