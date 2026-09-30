@@ -505,6 +505,15 @@ scan_bundles() {
                     case "$fb" in
                         *.so|*.so.*|lib*.so*|*crashpad*|*-sandbox|*helper*|*.sh|*.py) continue ;;
                     esac
+                    # Helpers/conversores/plugins no son la app: en OnlyOffice el
+                    # conversor x2t (46 MB) ganaba por tamaño a DesktopEditors
+                    # (2.8 MB), y el launcher ejecutaba el conversor en vez de la app.
+                    # Helpers/converters/plugins are not the app: in OnlyOffice the
+                    # converter x2t (46 MB) beat DesktopEditors (2.8 MB) by size and
+                    # the launcher ran the converter instead of the app.
+                    case "$f" in
+                        */converter/*|*/plugins/*|*/swiftshader/*|*/resources/*|*/locales/*|*/helpers/*) continue ;;
+                    esac
                     file -b "$f" 2>/dev/null | grep -q ELF && echo "$(stat -c%s "$f" 2>/dev/null || echo 0)|$f"
                 done | sort -rn | head -1 | cut -d'|' -f2)
             [[ -z "$mb" ]] && continue
