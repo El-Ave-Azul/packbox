@@ -114,6 +114,9 @@ invoke_pack() {
     # Nombre de bus D-Bus que la app posee (apps DBusActivatable).
     # D-Bus name the app owns (DBusActivatable apps).
     [[ -n "${CURRENT_BUS:-}" ]] && args+=(--dbus-name "$CURRENT_BUS")
+    # X11 opt-in (apps sin soporte Wayland: solo plugin xcb).
+    # X11 opt-in (apps without Wayland support: xcb plugin only).
+    [[ -n "${CURRENT_X11:-}" ]] && args+=(--x11)
     "$PACKBOX_BIN_PACK" "${args[@]}" "$wd"
 }
 
@@ -329,12 +332,19 @@ pack_bundle() {
     [[ -f "$wd/bundle/$br" && ! -x "$wd/bundle/$br" ]] && chmod +x "$wd/bundle/$br"
     ok "Binary: bundle/$br"
 
+    # Las libs de la app suelen estar JUNTO al binario (OnlyOffice, Electron…):
+    # sin ese dir, Qt/CEF cargan las del host y chocan de versión.
+    # The app's libs usually sit NEXT to the binary (OnlyOffice, Electron…):
+    # without that dir Qt/CEF load the host's and hit a version clash.
+    local bdir
+    bdir=$(dirname "$br")
     cat > "$wd/bin/launcher.sh" <<LAUNCHER_EOF
 #!/usr/bin/env bash
 SCRIPT_DIR="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="\$(dirname "\$SCRIPT_DIR")"
 BUNDLE_DIR="\$APP_DIR/bundle"
-export LD_LIBRARY_PATH="\$BUNDLE_DIR:\$BUNDLE_DIR/lib:\$BUNDLE_DIR/lib64:\$BUNDLE_DIR/program:\${LD_LIBRARY_PATH:-}"
+BIN_DIR="\$BUNDLE_DIR/$bdir"
+export LD_LIBRARY_PATH="\$BIN_DIR:\$BUNDLE_DIR:\$BUNDLE_DIR/lib:\$BUNDLE_DIR/lib64:\$BUNDLE_DIR/program:\${LD_LIBRARY_PATH:-}"
 [[ -d "\$BUNDLE_DIR/share" ]] && export XDG_DATA_DIRS="\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}:\$BUNDLE_DIR/share"
 exec "\$BUNDLE_DIR/$br" "\$@"
 LAUNCHER_EOF
@@ -496,10 +506,19 @@ smoke_pbox() {
         return 1
     fi
     out=$(HOME="$h" timeout 5 "$h/.packbox/bin/packbox-run" "$aid" 2>&1); rc=$?
+    local bad=1
+    [[ $rc -eq 0 || $rc -eq 124 ]] && bad=0
+    if [[ $bad -eq 1 ]]; then
+        # Lo útil es el log de la APP (el HOME temporal se borra enseguida).
+        # What matters is the APP's log (the throwaway HOME is removed right after).
+        if [[ -f "$h/.cache/packbox/$aid.log" ]]; then
+            tail -5 "$h/.cache/packbox/$aid.log"
+        else
+            printf '%s\n' "$out" | tail -2
+        fi
+    fi
     rm -rf "$h"
-    [[ $rc -eq 0 || $rc -eq 124 ]] && return 0
-    printf '%s\n' "$out" | tail -2
-    return 1
+    return $bad
 }
 
 # run_app <app-id> — ejecuta la app y, si falla, sugiere el siguiente paso.

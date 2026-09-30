@@ -37,6 +37,7 @@ CURRENT_MODS=""
 # Cells are automatic; PACKBOX_NO_CELLS=1 packages the libs directly (no cells).
 CURRENT_NO_CELLS="${PACKBOX_NO_CELLS:-}"
 CURRENT_SANDBOX=""
+CURRENT_X11=""
 CURRENT_BUS=""
 CURRENT_ICON=""
 CURRENT_CATEGORIES=""
@@ -122,6 +123,27 @@ app_ldpath() {
     return 1
 }
 
+# x11_suggests <bin> — 0 si la app parece necesitar X11: trae el plugin xcb pero
+# ningún plugin wayland (Qt), o enlaza X11/xcb sin libwayland.
+# x11_suggests <bin> — 0 if the app seems to need X11: it ships the xcb plugin
+# but no wayland one (Qt), or links X11/xcb without libwayland.
+x11_suggests() {
+    local bin="$1" dir libs
+    [[ -z "$bin" ]] && return 1
+    dir=$(dirname "$bin")
+    if [[ -d "$dir/platforms" ]]; then
+        [[ -e "$dir/platforms/libqxcb.so" ]] || return 1
+        compgen -G "$dir/platforms/libqwayland*" >/dev/null && return 1
+        return 0
+    fi
+    libs=$(ldd "$bin" 2>/dev/null) || return 1
+    [[ -z "$libs" ]] && return 1
+    echo "$libs" | grep -qE 'libX11|libxcb' || return 1
+    echo "$libs" | grep -qE 'libwayland' && return 1
+    return 0
+}
+
+# pm_app <bin> — 0 si la app gestiona paquetes del sistema (pacman/apt/dnf…):
 # pm_app <bin> — 0 si la app gestiona paquetes del sistema (pacman/apt/dnf…):
 # fuera del sandbox funcionaría, dentro no puede (necesita /etc, escribir /var
 # y root). Sirve para avisar ANTES de empaquetarla.
@@ -846,6 +868,7 @@ show_details() {
         al=$(resolve_elf "$p")
         [[ -z "$al" ]] && al="$p"
         if sandbox_suggests "$al"; then CURRENT_SANDBOX="system-bus,libvirt,kvm"; else CURRENT_SANDBOX=""; fi
+        if x11_suggests "$al"; then CURRENT_X11="1"; fi
         CURRENT_MODS=""
         if [[ -n "$bd" ]]; then CURRENT_PACK_MODE=4; else CURRENT_PACK_MODE=2; fi
         if pm_app "$p"; then
@@ -950,6 +973,20 @@ configure_pack() {
         if ask_yn "$(_tt L_SANDBOX_PROMPT "¿Permitir bus de sistema + /run/libvirt + /dev/kvm?")" "n"; then
             CURRENT_SANDBOX="system-bus,libvirt,kvm"
             det "$(_tt L_SANDBOX_ON "sandbox: system-bus, libvirt, kvm")"
+        fi
+    fi
+
+    # X11 opt-in, solo para apps sin soporte Wayland (solo plugin xcb).
+    # X11 opt-in, only for apps without Wayland support (xcb plugin only).
+    local xa
+    xa=$(resolve_elf "$p"); [[ -z "$xa" ]] && xa="$p"
+    if x11_suggests "$xa"; then
+        echo ""
+        echo -e "  ${BD}$(_tt L_X11 "X11")${N}"
+        echo -e "     ${DM}$(_tt L_X11_HINT "la app no soporta Wayland (solo plataforma xcb)")${N}"
+        if ask_yn "$(_tt L_X11_PROMPT "¿Permitir X11 (vía XWayland)?")" "s"; then
+            CURRENT_X11="1"
+            det "$(_tt L_X11_ON "X11: permitido")"
         fi
     fi
 
