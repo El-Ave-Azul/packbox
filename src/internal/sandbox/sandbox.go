@@ -207,6 +207,10 @@ func (s *Sandbox) bwrapArgs() ([]string, func(), error) {
 	a := []string{
 		"--ro-bind", "/usr", "/usr",
 		"--dev", "/dev", "--proc", "/proc",
+		// /sys read-only: system monitors (resources, sensors) read /sys/class,
+		// /sys/bus… without it they die on start.
+		// /sys en solo lectura: los monitores leen /sys/class, /sys/bus…
+		"--ro-bind-try", "/sys", "/sys",
 		"--tmpfs", "/tmp", "--tmpfs", "/run",
 		"--unshare-all",
 		"--cap-drop", "ALL",

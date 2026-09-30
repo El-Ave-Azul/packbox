@@ -122,6 +122,28 @@ app_ldpath() {
     return 1
 }
 
+# pm_app <bin> — 0 si la app gestiona paquetes del sistema (pacman/apt/dnf…):
+# fuera del sandbox funcionaría, dentro no puede (necesita /etc, escribir /var
+# y root). Sirve para avisar ANTES de empaquetarla.
+# pm_app <bin> — 0 if the app manages system packages (pacman/apt/dnf…): it
+# would work outside the sandbox but not inside (it needs /etc, to write /var
+# and root). Used to warn BEFORE packaging it.
+pm_app() {
+    local bin="$1" b
+    [[ -z "$bin" ]] && return 1
+    b=$(basename "$bin" | tr '[:upper:]' '[:lower:]')
+    case "$b" in
+        octopi* | pamac* | pacseek* | pacman* | paru | yay | trizen |         synaptic* | gnome-software* | *update-manager* | *packagekit* |         *apper* | *muon* | *discover*) return 0 ;;
+    esac
+    ldd "$bin" 2>/dev/null | grep -qE 'libalpm|libpackagekit|libapt' && return 0
+    if command -v strings >/dev/null 2>&1; then
+        strings -n 8 "$bin" 2>/dev/null | grep -qE '^/etc/pacman\.conf$|^/etc/apt/|^/var/lib/dpkg$|^/var/lib/pacman$' && return 0
+    fi
+    return 1
+}
+
+# inherit_meta <bin> — hereda icono/categoría del .desktop del sistema que
+
 # inherit_meta <bin> — hereda icono/categoría del .desktop del sistema que
 # apunte al mismo binario (por basename), si aún no los tiene.
 # inherit_meta <bin> — inherits icon/category from the system .desktop pointing
@@ -817,6 +839,9 @@ show_details() {
         if sandbox_suggests "$al"; then CURRENT_SANDBOX="system-bus,libvirt,kvm"; else CURRENT_SANDBOX=""; fi
         CURRENT_MODS=""
         if [[ -n "$bd" ]]; then CURRENT_PACK_MODE=4; else CURRENT_PACK_MODE=2; fi
+        if pm_app "$p"; then
+            warn "$CURRENT_APP_ID: $(_tt L_PM_APP "gestiona paquetes del sistema (pacman/apt): dentro del sandbox no puede")"
+        fi
         ok "Config (auto)  $CURRENT_APP_ID $CURRENT_VERSION · net:$CURRENT_NETWORK · mode:$CURRENT_PACK_MODE${CURRENT_SANDBOX:+ · sandbox:$CURRENT_SANDBOX}"
         return 0
     fi
@@ -842,6 +867,13 @@ configure_pack() {
     local nm p aid gui tk bd s
     nm=$(fld "$inf" 1); p=$(fld "$inf" 2); aid=$(fld "$inf" 6)
     gui=$(fld "$inf" 7); tk=$(fld "$inf" 8); bd=$(fld "$inf" 9); s=$(fld "$inf" 4)
+
+    # Gestores de paquetes del sistema: avisar (no funcionarán en sandbox).
+    # System package managers: warn (they will not work sandboxed).
+    if pm_app "$p"; then
+        warn "$CURRENT_APP_ID: $(_tt L_PM_APP "gestiona paquetes del sistema (pacman/apt): dentro del sandbox no puede")"
+        det "$(_tt L_PM_WHY "necesita /etc, escribir /var y root; el .pbox servirá en su distro, no aquí")"
+    fi
 
     hdr "$(t L_APP_ID)"
     echo -en "  [${DM}$aid${N}]: "
