@@ -118,10 +118,16 @@ func (s *Sandbox) sessionPolicy() busPolicy {
 		}
 	}
 	own := s.AllowSessionOwn
+	see := s.AllowSessionSee
 	if own == nil && s.BusName != "" {
 		own = []string{s.BusName, s.BusName + ".*"}
+		// El proxy exige también VER el nombre para poder poseerlo.
+		// The proxy also requires SEE-ing the name to own it.
+		if see == nil {
+			see = []string{s.BusName}
+		}
 	}
-	return busPolicy{Talk: talk, Own: own}
+	return busPolicy{Talk: talk, Own: own, See: see}
 }
 
 // systemPolicy returns the system-bus policy. By default nothing is allowed; the

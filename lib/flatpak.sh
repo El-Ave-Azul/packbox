@@ -168,6 +168,9 @@ current_from_flatpak() {
         grep -qi '^Terminal=true' "$df" && CURRENT_IS_GUI="CLI"
         CURRENT_BUS=$(basename "$df" .desktop)
         grep -qi '^DBusActivatable=true' "$df" || CURRENT_BUS=""
+        # En Flatpak el nombre de bus es el app-id (convención).
+        # In Flatpak the bus name is the app id (convention).
+        [[ -z "$CURRENT_BUS" ]] && CURRENT_BUS="$id"
         local ic
         ic=$(grep -m1 '^Icon=' "$df" | cut -d= -f2-)
         [[ -n "$ic" ]] && CURRENT_ICON=$(resolve_icon "$ic" || true)
@@ -217,7 +220,11 @@ flatpak_pack() {
             [[ -f "$lp" ]] || continue
             is_universal "$(basename "$lp")" && continue
             libs+=("$lp")
-        done < <(find "$d" -maxdepth 1 -type f -name '*.so*' 2>/dev/null)
+        # -type f Y -type l: los sonames (libfoo.so.1 → libfoo.so.1.2.3) son
+        # symlinks y sin ellos el loader no encuentra las libs.
+        # -type f AND -type l: sonames (libfoo.so.1 → libfoo.so.1.2.3) are
+        # symlinks and without them the loader cannot find the libs.
+        done < <(find "$d" -maxdepth 1 \( -type f -o -type l \) -name '*.so*' 2>/dev/null)
     done
     if ((${#libs[@]} > 0)); then
         cells=$("$PACKBOX_BIN_MODULE" cell "${libs[@]}" 2>/dev/null | paste -sd, -)

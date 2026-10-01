@@ -91,7 +91,7 @@ func Apply(home string, store *cas.Store, m *manifest.Manifest) (Result, error) 
 	// en /app), no se copian al árbol. Pero si el bubblewrap del host es
 	// demasiado antiguo para --overlay, se materializan en el árbol para que un
 	// bind normal siga funcionando.
-	if len(m.Mods) > 0 && !sandbox.OverlaySupported() {
+	if len(m.Mods) > 0 && !sandbox.OverlayUsable(len(m.Mods)) {
 		if n, err := LinkCells(home, treeDir, m.Mods); err != nil {
 			fmt.Printf("   WARN cell: %v\n", err)
 		} else {

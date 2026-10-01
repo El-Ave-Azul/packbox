@@ -21,6 +21,22 @@ import (
 // OverlaySupported indica si bubblewrap soporta --overlay (se comprueba una vez
 // por proceso). El bubblewrap antiguo (< 0.8) no lo hace, y entonces /app es un
 // bind de solo lectura y las celdas deben materializarse en el árbol al instalar.
+// MaxOverlayLayers is the number of lower layers we are willing to stack:
+// mount(2) options must fit in one page (4096 B) and a string per layer
+// ("/proc/self/fd/N:") is ~18 B, so a few hundred cells already break the
+// mount. Beyond this, install materializes the cells into the tree instead.
+// MaxOverlayLayers es el número de capas inferiores que aceptamos apilar: las
+// opciones de mount(2) deben caber en una página (4096 B) y cada capa
+// ("/proc/self/fd/N:") son ~18 B, así que unos cientos de celdas ya rompen el
+// montaje. Por encima, el instalador materializa las celdas en el árbol.
+const MaxOverlayLayers = 64
+
+// OverlayUsable reports whether an overlay with n layers can be mounted.
+// OverlayUsable indica si se puede montar un overlay con n capas.
+func OverlayUsable(n int) bool {
+	return n <= MaxOverlayLayers && OverlaySupported()
+}
+
 var OverlaySupported = sync.OnceValue(func() bool {
 	out, err := exec.Command("bwrap", "--help").Output()
 	if err != nil {
@@ -93,6 +109,7 @@ type Sandbox struct {
 	// AllowSessionOwn overrides the session-bus owned names (default: BusName).
 	// AllowSessionOwn sustituye los nombres poseídos en el bus (por defecto: BusName).
 	AllowSessionOwn []string
+	AllowSessionSee []string
 	AllowSystemTalk []string
 	NoDBusProxy     bool
 
@@ -366,7 +383,7 @@ func (s *Sandbox) appMount() []string {
 	// directly. In the latter case install materialized the cells into it.
 	// Sin capas, o con un bubblewrap sin --overlay, bindea el árbol directamente.
 	// En ese último caso el instalador materializó las celdas dentro.
-	if len(s.Layers) == 0 || !OverlaySupported() {
+	if len(s.Layers) == 0 || !OverlayUsable(len(s.Layers)) {
 		return []string{"--ro-bind", tree, "/app"}
 	}
 	var a []string

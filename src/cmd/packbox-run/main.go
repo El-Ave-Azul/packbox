@@ -38,6 +38,13 @@ func main() {
 	sb.X11 = m.X11
 	sb.Caps = m.Sandbox
 	sb.BusName = m.BusName
+	// Red de seguridad: una app cuyo id parece un nombre de bus (org.gnome.Foo)
+	// normalmente lo posee (es la convención de D-Bus y la de Flatpak).
+	// Safety net: an app whose id looks like a bus name (org.gnome.Foo) usually
+	// owns it (the D-Bus and Flatpak convention).
+	if sb.BusName == "" && strings.Count(m.Name, ".") >= 2 {
+		sb.BusName = m.Name
+	}
 	if m.BundleDir != "" {
 		sb.ROBinds = []string{m.BundleDir}
 	}
