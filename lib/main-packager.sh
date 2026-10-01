@@ -10,6 +10,13 @@
 
 main_packager() {
     case "${1:-}" in
+        --flatpak|-f)
+            shift
+            install_lang_files
+            load_lang
+            flatpak_import "${1:-}"
+            return $?
+            ;;
         --auto|-a)
             PACKBOX_AUTO=1
             shift
@@ -75,11 +82,12 @@ HELP
         echo -e "  ${C}8${N}  $(_tt L_8_VERIFY "Verificar una app")"
         echo -e "  ${C}9${N}  $(_tt L_9_UPDATE "Actualizar una app")"
         echo -e "  ${Y}10${N} $(_tt L_10_DIAG "Diagnóstico del entorno")"
+        echo -e "  ${C}11${N} $(_tt L_11_FLATPAK "Importar una app de Flatpak")"
         echo -e "  ${C}0${N}  $(t L_0_EXIT)"
         echo ""
         echo -e "  ${DM}${HR_T}${N}"
         echo ""
-        echo -en "  ${BD}> $(t L_OPTION) [0-10]: ${N}"
+        echo -en "  ${BD}> $(t L_OPTION) [0-11]: ${N}"
         local opt
         # Sin entrada (pipe/CI agotado) → salir, no quedarse en bucle.
         # No input left (pipe/CI exhausted) → exit, don't loop forever.
@@ -99,6 +107,7 @@ HELP
             8) run_verify ;;
             9) run_update ;;
             10) run_diagnose ;;
+            11) flatpak_import ;;
             0|q|Q)
                 echo ""
                 echo -e "  ${DM}Bye / Adiós${N}"
