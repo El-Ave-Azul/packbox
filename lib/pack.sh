@@ -511,11 +511,12 @@ smoke_pbox() {
     if [[ $bad -eq 1 ]]; then
         # Lo útil es el log de la APP (el HOME temporal se borra enseguida).
         # What matters is the APP's log (the throwaway HOME is removed right after).
-        if [[ -f "$h/.cache/packbox/$aid.log" ]]; then
-            tail -5 "$h/.cache/packbox/$aid.log"
-        else
-            printf '%s\n' "$out" | tail -2
-        fi
+        # El log de la app… y lo que dijo packbox-run (bwrap y otros errores
+        # que ocurren ANTES de que la app escriba nada).
+        # The app's log… and what packbox-run said (bwrap and other errors that
+        # happen BEFORE the app writes anything).
+        [[ -f "$h/.cache/packbox/$aid.log" ]] && tail -5 "$h/.cache/packbox/$aid.log"
+        printf '%s\n' "$out" | grep -vE '^[[:space:]]*$' | tail -3
     fi
     rm -rf "$h"
     return $bad

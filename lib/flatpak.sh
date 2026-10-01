@@ -16,6 +16,14 @@
 
 FLATPAK_ROOT="${FLATPAK_ROOT:-/var/lib/flatpak}"
 
+# _fp_pause — pausa solo con terminal: en un script (sin stdin) no debe colgarse.
+# _fp_pause — pauses only with a terminal: in a script (no stdin) it must not hang.
+_fp_pause() {
+    [[ -t 0 ]] && _fp_pause
+    return 0
+}
+
+
 # flatpak_applications — ids de las apps instaladas con Flatpak.
 # flatpak_applications — ids of the apps installed with Flatpak.
 flatpak_applications() {
@@ -80,7 +88,7 @@ flatpak_import() {
 
     if [[ ! -d "$FLATPAK_ROOT/app" ]]; then
         warn "$(_tt L_FP_NONE "Flatpak no está instalado (o no hay apps instaladas)")"
-        read -rp "  ENTER..."
+        _fp_pause
         return 1
     fi
 
@@ -94,7 +102,7 @@ flatpak_import() {
         done < <(flatpak_applications)
         if ((${#apps[@]} == 0)); then
             warn "$(_tt L_NONE "ninguna")"
-            read -rp "  ENTER..."
+            _fp_pause
             return 1
         fi
         echo ""
@@ -109,7 +117,7 @@ flatpak_import() {
 
     dep=$(flatpak_deploy "$id") || {
         warn "$(_tt L_FP_NOTFOUND "no encontrada") : $id"
-        read -rp "  ENTER..."
+        _fp_pause
         return 1
     }
     cmd=$(flatpak_meta "$dep" command)
@@ -122,7 +130,7 @@ flatpak_import() {
     det "runtime: ${rt:--}"
     if [[ -z "$cmd" || ! -x "$dep/files/bin/$cmd" ]]; then
         warn "$(_tt L_FP_NOCMD "no encuentro el binario de la app") : bin/${cmd:-?}"
-        read -rp "  ENTER..."
+        _fp_pause
         return 1
     fi
     echo ""
