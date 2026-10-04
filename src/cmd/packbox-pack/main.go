@@ -247,6 +247,15 @@ func main() {
 		}
 	}
 
+	// Normaliza la red: "none" = sin red → se omite del manifiesto (la ausencia
+	// equivale a "none").
+	// Normalize network: "none" = no network → omitted from the manifest (absence
+	// means "none").
+	netMode := manifest.NetworkMode(*network)
+	if netMode == manifest.NetworkNone {
+		netMode = ""
+	}
+
 	appM := &manifest.Manifest{
 		SchemaVersion: "1.7",
 		Name:          *name,
@@ -260,7 +269,7 @@ func main() {
 		Categories:    *categories,
 		Sandbox:       splitList(*sbCaps),
 		BusName:       *busName,
-		Network:       manifest.NetworkMode(*network),
+		Network:       netMode,
 		X11:           *x11,
 		Layers:        manifest.Layers{App: manifest.AppLayer{Files: files}},
 		Mods:          mlist,

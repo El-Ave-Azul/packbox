@@ -20,7 +20,7 @@ content-addressed store (BLAKE3 CAS), with optimized **content-defined chunking
 libraries only store the 10% that differs.
 
 > [!IMPORTANT]
-> **Beta Status (v0.3.0).** The system has evolved core stability, implementing LRU garbage collection, Zstd compression on export, and a modern graphical interface in GTK4.
+> **Beta Status (v0.3.0).** The system has evolved core stability, implementing LRU garbage collection and Zstd compression on export.
 
 ---
 
@@ -92,7 +92,7 @@ unit) that several apps share, and leaves the universal libraries
 | Distribution         | Flathub + OSTree remotes    | Concurrent HTTP remote              |
 | Signatures           | GPG                         | ed25519 (`.pbox.sig`)                |
 | Sandbox              | bwrap + seccomp + portals   | bwrap + seccomp + dbus-proxy + portals |
-| Interface           | GNOME Software / CLI        | **GUI (GTK4)** + TUI + CLI            |
+| Interface           | GNOME Software / CLI        | **TUI** + CLI                         |
 | Overhead per app     | ~100% if runtime differs    | **~5–15%** with apps that share      |
 
 ---
@@ -144,10 +144,7 @@ packbox-diagnose
 
 ## Quick start
 
-### 1. Graphical Interface (Recommended)
-Run `packbox-gui` to manage your applications, configure sandbox permissions, and monitor space savings in real-time.
-
-### 2. Interactive packager (TUI)
+### 1. Interactive packager (TUI)
 
 ```bash
 ./packbox-packager.sh
@@ -158,7 +155,7 @@ Option **1 (Package)** looks for **already installed** apps and **generates a**
 want to **install it on this machine** (default **no**, to avoid cluttering your
 system). To install a `.pbox`, use option **5 (Import)**.
 
-### 3. Command line
+### 2. Command line
 
 ```bash
 # Package a directory
@@ -183,11 +180,10 @@ packbox-update org.example.myapp ./new/manifest.json
 
 ## Available commands
 
-Packbox v0.3.0 includes **16 Go binaries** in `~/.packbox/bin/`:
+Packbox v0.3.0 includes **15 Go binaries** in `~/.packbox/bin/`:
 
 | Command            | Purpose                                                            |
 |--------------------|--------------------------------------------------------------------|
-| `packbox-gui`      | Graphical interface for app and permission management               |
 | `packbox-pack`     | Hashes a directory into CAS chunks and generates `manifest.json`   |
 | `packbox-install`  | Installs an app from the manifest (+ `--desktop`/`--remove-desktop`) |
 | `packbox-run`      | Runs the app in the `bwrap` sandbox (overlay A/C, private HOME)    |
@@ -264,7 +260,7 @@ Packbox v0.3.0 includes **16 Go binaries** in `~/.packbox/bin/`:
 - [x] LRU garbage collection
 
 ### v0.2 — Scope
-- [x] GTK4 GUI Frontend
+- [ ] GTK4 GUI Frontend (postponed)
 - [ ] Precompiled x86_64 and aarch64 binaries
 - [ ] Signed central index/repository
 

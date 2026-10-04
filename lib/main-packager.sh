@@ -70,24 +70,22 @@ HELP
 
     while true; do
         show_banner_packager
-        echo -e "  ${BD}$(t L_WHAT_DO)${N}"
+        panel_top "$(t L_WHAT_DO)"
+        menu_item 1 "$(t L_1_PACK)"
+        menu_item 2 "$(t L_2_LIST)"
+        menu_item 3 "$(t L_3_GC)"
+        menu_item 4 "$(t L_4_EXPORT)" "" "$C" "$BD"
+        menu_item 5 "$(t L_5_IMPORT)" "" "$C" "$BD"
+        menu_item 6 "$(t L_6_UNINSTALL)" "" "$R" "${R}${BD}"
+        menu_item 7 "$(_tt L_7_LANG "Cambiar idioma")" "$(t L_LANG_NAME)"
+        menu_item 8 "$(_tt L_8_VERIFY "Verificar una app")"
+        menu_item 9 "$(_tt L_9_UPDATE "Actualizar una app")"
+        menu_item 10 "$(_tt L_10_DIAG "Diagnóstico del entorno")" "" "$Y"
+        menu_item 11 "$(_tt L_11_FLATPAK "Importar una app de Flatpak")"
+        menu_item 0 "$(t L_0_EXIT)"
+        panel_bottom
         echo ""
-        echo -e "  ${C}1${N}  $(t L_1_PACK)"
-        echo -e "  ${C}2${N}  $(t L_2_LIST)"
-        echo -e "  ${C}3${N}  $(t L_3_GC)"
-        echo -e "  ${C}4${N}  ${BD}$(t L_4_EXPORT)${N}"
-        echo -e "  ${C}5${N}  ${BD}$(t L_5_IMPORT)${N}"
-        echo -e "  ${C}6${N}  ${R}${BD}$(t L_6_UNINSTALL)${N}"
-        echo -e "  ${C}7${N}  $(_tt L_7_LANG "Cambiar idioma") ${DM}($(t L_LANG_NAME))${N}"
-        echo -e "  ${C}8${N}  $(_tt L_8_VERIFY "Verificar una app")"
-        echo -e "  ${C}9${N}  $(_tt L_9_UPDATE "Actualizar una app")"
-        echo -e "  ${Y}10${N} $(_tt L_10_DIAG "Diagnóstico del entorno")"
-        echo -e "  ${C}11${N} $(_tt L_11_FLATPAK "Importar una app de Flatpak")"
-        echo -e "  ${C}0${N}  $(t L_0_EXIT)"
-        echo ""
-        echo -e "  ${DM}${HR_T}${N}"
-        echo ""
-        echo -en "  ${BD}> $(t L_OPTION) [0-11]: ${N}"
+        echo -en "  ${BD}${ARROW} $(t L_OPTION) [0-11]: ${N}"
         local opt
         # Sin entrada (pipe/CI agotado) → salir, no quedarse en bucle.
         # No input left (pipe/CI exhausted) → exit, don't loop forever.
@@ -122,12 +120,8 @@ HELP
 # ─── Banner ─────────────────────────────────────────────────────────────────
 show_banner_packager() {
     clear
-    echo -e "${BD}${C}"
-    echo "  ═══════════════════════════════════════════════════════════════"
-    echo "   $(t L_PACKAGER_TITLE)"
-    echo "   v${PACKBOX_VERSION} · i18n (9) · Bundles · Desktop · Network opt-in"
-    echo "  ═══════════════════════════════════════════════════════════════"
-    echo -e "${N}"
+    pb_banner "$(t L_PACKAGER_TITLE)" "CAS · CDC · sandbox · .pbox · ed25519" "v${PACKBOX_VERSION}"
+    echo ""
 }
 
 # ─── Cambiar idioma ─────────────────────────────────────────────────────────

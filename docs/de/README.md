@@ -20,7 +20,7 @@ inhaltsadressierten Speicher (BLAKE3 CAS), mit optimiertem **inhaltsdefiniertem 
 Bibliotheken teilen, speichern nur die 10 %, die abweichen.
 
 > [!IMPORTANT]
-> **Beta-Status (v0.3.0).** Das System hat die Kernstabilität verbessert und dabei LRU-Garbage-Collection, Zstd-Komprimierung beim Export und eine moderne grafische Benutzeroberfläche in GTK4 implementiert.
+> **Beta-Status (v0.3.0).** Das System hat die Kernstabilität verbessert und dabei LRU-Garbage-Collection und Zstd-Komprimierung beim Export implementiert.
 
 ---
 
@@ -89,7 +89,7 @@ universellen Bibliotheken (`libc`, `libm`, …) dem Host.
 | Verteilung           | Flathub + OSTree-Remotes    | Konkurrenter HTTP-Remote              |
 | Signaturen           | GPG                         | ed25519 (`.pbox.sig`)                |
 | Sandbox              | bwrap + seccomp + Portale   | bwrap + seccomp + dbus-proxy + Portale |
-| Benutzeroberfläche   | GNOME Software / CLI        | **GUI (GTK4)** + TUI + CLI            |
+| Benutzeroberfläche   | GNOME Software / CLI        | **TUI** + CLI                          |
 | Overhead pro App     | ~100 % bei abweichender Runtime | **~5–15 %** bei Apps mit Sharing  |
 
 ---
@@ -141,10 +141,7 @@ packbox-diagnose
 
 ## Schnellstart
 
-### 1. Grafische Benutzeroberfläche (Empfohlen)
-Führe `packbox-gui` aus, um deine Anwendungen zu verwalten, Sandbox-Berechtigungen zu konfigurieren und die Platzersparnis in Echtzeit zu überwachen.
-
-### 2. Interaktiver Packager (TUI)
+### 1. Interaktiver Packager (TUI)
 
 ```bash
 ./packbox-packager.sh
@@ -155,7 +152,7 @@ Die Option **1 (Paketieren)** sucht nach **bereits installierten** Apps und **er
 zusätzlich **auf diesem Rechner installieren** möchtest (Standard: **nein**, um dein
 System nicht zu überladen). Zum Installieren einer `.pbox` verwende Option **5 (Importieren)**.
 
-### 3. Kommandozeile
+### 2. Kommandozeile
 
 ```bash
 # Ein Verzeichnis paketieren
@@ -180,9 +177,25 @@ packbox-update org.ejemplo.miapp ./nuevo/manifest.json
 
 ## Verfügbare Befehle
 
-Packbox v0.3.0 enthält **16 Go-Binärdateien** in `~/.packbox/bin/`:
+Packbox v0.3.0 enthält **15 Go-Binärdateien** in `~/.packbox/bin/`:
 
-| Befehl             | Zweck                                                              |\n|--------------------|--------------------------------------------------------------------|\n| `packbox-gui`      | Grafische Oberfläche zur Verwaltung von Apps und Berechtigungen               |\n| `packbox-pack`     | Hasht ein Verzeichnis in CAS-Chunks und erzeugt `manifest.json`    |\n| `packbox-install`  | Installiert eine App aus dem Manifest (+ `--desktop`/`--remove-desktop`) |\n| `packbox-run`      | Führt die App im `bwrap`-Sandbox aus (Overlay A/C, privates HOME)  |\n| `packbox-list`     | Listet Apps mit ihrer **echten Größe** und Sharing-Ersparnis (`--tsv`) |\n| `packbox-remove`   | Deinstalliert eine App (`--all` = alle, `--dry-run`) und gibt ihre Referenzen frei |\n| `packbox-gc`       | Sammelt Chunks **und Zellen** ohne Referenzen ein (Unterstützt LRU)            |\n| `packbox-verify`   | Prüft auflösbare Libs + **ABI-Kompatibilität** des Hosts           |\n| `packbox-export`   | Exportiert nach `.pbox` mit **adaptiver Kompression** und optionalem `--sign` |\n| `packbox-import`   | Importiert ein `.pbox` (Anti-tar-slip, Traversal und Signaturen)        |\n| `packbox-update`   | Aktualisiert eine App unter Wiederverwendung von Chunks + Delta-Bericht (`--no-gc`) |\n| `packbox-module`   | Module/Zellen: `list`, `create`, `cell <lib>...`                   |\n| `packbox-sign`     | ed25519-Schlüssel und -Signaturen: `keygen`, `sign`, `verify`, `trust` |\n| `packbox-fetch`    | Konkurrenter HTTP-Remote: `publish <id> <dir>` und `fetch <id> --from <url>` |\n| `packbox-debug`    | Hängt die Debug-Symbole (separate Zelle) einer installierten App an |\n| `packbox-diagnose` | Umgebungsbericht für Bug-Reports                                   |
+| Befehl             | Zweck                                                              |
+|--------------------|--------------------------------------------------------------------|
+| `packbox-pack`     | Hasht ein Verzeichnis in CAS-Chunks und erzeugt `manifest.json`    |
+| `packbox-install`  | Installiert eine App aus dem Manifest (+ `--desktop`/`--remove-desktop`) |
+| `packbox-run`      | Führt die App im `bwrap`-Sandbox aus (Overlay A/C, privates HOME)  |
+| `packbox-list`     | Listet Apps mit ihrer **echten Größe** und Sharing-Ersparnis (`--tsv`) |
+| `packbox-remove`   | Deinstalliert eine App (`--all` = alle, `--dry-run`) und gibt ihre Referenzen frei |
+| `packbox-gc`       | Sammelt Chunks **und Zellen** ohne Referenzen ein (Unterstützt LRU)            |
+| `packbox-verify`   | Prüft auflösbare Libs + **ABI-Kompatibilität** des Hosts           |
+| `packbox-export`   | Exportiert nach `.pbox` mit **adaptiver Kompression** und optionalem `--sign` |
+| `packbox-import`   | Importiert ein `.pbox` (Anti-tar-slip, Traversal und Signaturen)        |
+| `packbox-update`   | Aktualisiert eine App unter Wiederverwendung von Chunks + Delta-Bericht (`--no-gc`) |
+| `packbox-module`   | Module/Zellen: `list`, `create`, `cell <lib>...`                   |
+| `packbox-sign`     | ed25519-Schlüssel und -Signaturen: `keygen`, `sign`, `verify`, `trust` |
+| `packbox-fetch`    | Konkurrenter HTTP-Remote: `publish <id> <dir>` und `fetch <id> --from <url>` |
+| `packbox-debug`    | Hängt die Debug-Symbole (separate Zelle) einer installierten App an |
+| `packbox-diagnose` | Umgebungsbericht für Bug-Reports                                   |
 
 ---
 
@@ -244,7 +257,7 @@ Packbox v0.3.0 enthält **16 Go-Binärdateien** in `~/.packbox/bin/`:
 - [x] LRU-Garbage-Collection
 
 ### v0.2 — Umfang
-- [x] GUI-Frontend in GTK4
+- [ ] GUI-Frontend in GTK4 (aufgeschoben)
 - [ ] Vorkompilierte Binärdateien x86_64 und aarch64
 - [ ] Signierter zentraler Index/Repository
 

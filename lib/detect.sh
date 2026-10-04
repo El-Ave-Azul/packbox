@@ -30,7 +30,7 @@ CURRENT_IS_GUI=""
 CURRENT_TOOLKIT=""
 CURRENT_PACK_MODE=2
 CURRENT_BUNDLE_DIR=""
-CURRENT_NETWORK="false"
+CURRENT_NETWORK="none"
 CURRENT_MODS=""
 # Las celdas son automáticas; PACKBOX_NO_CELLS=1 empaqueta las libs directas
 # (sin celdas) para quien lo prefiera.
@@ -52,6 +52,14 @@ declare -gA GUI_OF=()
 # Nombre de bus D-Bus que la app posee (de un .desktop DBusActivatable).
 # D-Bus name the app owns (from a DBusActivatable .desktop).
 declare -gA BUS_OF=()
+
+# is_valid_bus_name <name> — 0 si es un nombre de bus D-Bus válido (con punto).
+# is_valid_bus_name <name> — 0 if it's a valid D-Bus name (with a dot).
+is_valid_bus_name() {
+    local n="${1:-}"
+    [[ "$n" == *.* ]] || return 1
+    [[ "$n" =~ ^[A-Za-z_][A-Za-z0-9_-]*(\.[A-Za-z_][A-Za-z0-9_-]*)+$ ]]
+}
 # LD_LIBRARY_PATH con el que se lanza cada app (de su .desktop), clave = binario.
 # LD_LIBRARY_PATH the app is launched with (from its .desktop), key = binary.
 declare -gA LDLP_OF=()
@@ -651,8 +659,22 @@ scan_desktop() {
             [[ -n "$cat" ]] && CAT_OF[$bp]="$cat"
             [[ -n "$ldlp" ]] && LDLP_OF[$bp]="$ldlp"
             # DBusActivatable → el bus es el nombre del .desktop sin extensión.
+            # Además, una GtkApplication posee su app id (= basename del .desktop)
+            # aunque el .desktop NO sea DBusActivatable; si es un nombre de bus
+            # válido, hay que permitírselo o el registro en D-Bus falla y la app
+            # muere. En apps CLI no aplica.
             # DBusActivatable → the bus name is the .desktop basename.
-            [[ -n "$dbusact" ]] && BUS_OF[$bp]="$(basename "$df" .desktop)"
+            # Also, a GtkApplication owns its app id (= .desktop basename) even
+            # when the .desktop is NOT DBusActivatable; if it is a valid bus name
+            # it must be allowed, or D-Bus registration fails and the app dies.
+            # CLI apps are excluded.
+            if [[ -n "$dbusact" ]]; then
+                BUS_OF[$bp]="$(basename "$df" .desktop)"
+            elif [[ "$g" == "GUI" ]]; then
+                local _bn
+                _bn="$(basename "$df" .desktop)"
+                is_valid_bus_name "$_bn" && BUS_OF[$bp]="$_bn"
+            fi
             local iconp=""
             [[ -n "$icon" ]] && iconp=$(resolve_icon "$icon")
             [[ -n "$iconp" ]] && ICON_OF[$bp]="$iconp"
@@ -863,7 +885,7 @@ show_details() {
         CURRENT_LDLP="${LDLP_OF[$p]:-}"
     CURRENT_BUS="${BUS_OF[$p]:-}"
         [[ -z "$CURRENT_LDLP" ]] && CURRENT_LDLP="$(app_ldpath "$p" || true)"
-        if net_suggests "$p"; then CURRENT_NETWORK="true"; else CURRENT_NETWORK="false"; fi
+        if net_suggests "$p"; then CURRENT_NETWORK="full"; else CURRENT_NETWORK="none"; fi
         local al
         al=$(resolve_elf "$p")
         [[ -z "$al" ]] && al="$p"
@@ -941,6 +963,9 @@ configure_pack() {
     CURRENT_LDLP="${LDLP_OF[$p]:-}"
     [[ -z "$CURRENT_LDLP" ]] && CURRENT_LDLP="$(app_ldpath "$p" || true)"
     CURRENT_CATEGORIES="${CAT_OF[$p]:-}"
+    # Nombre de bus D-Bus que la app puede poseer (si tiene uno).
+    # D-Bus name the app may own (if any).
+    CURRENT_BUS="${BUS_OF[$p]:-}"
 
     # ─── Pregunta de red ────────────────────────────────────────────────────
     # ─── Network question ───────────────────────────────────────────────────
@@ -953,10 +978,10 @@ configure_pack() {
     echo -e "  ${BD}$(_tt L_NETWORK "Acceso a red"):${N}"
     echo -e "     ${DM}Heuristic: this app $([ "$net_hint" = "sí" ] && echo "seems to NEED" || echo "seems NOT to need") network.${N}"
     if ask_yn "$(_tt L_NETWORK_PROMPT "¿Permitir red?")" "$net_default"; then
-        CURRENT_NETWORK="true"
+        CURRENT_NETWORK="full"
         det "$(_tt L_NETWORK_ON "Red: ACTIVADA")"
     else
-        CURRENT_NETWORK="false"
+        CURRENT_NETWORK="none"
         det "$(_tt L_NETWORK_OFF "Red: desactivada (aislada)")"
     fi
 

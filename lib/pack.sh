@@ -97,8 +97,10 @@ invoke_pack() {
     local wd="$1" aid="$2" ep="$3"
     local gf="false"
     [[ "$CURRENT_IS_GUI" == "GUI" ]] && gf="true"
-    local nf="false"
-    [[ "$CURRENT_NETWORK" == "true" ]] && nf="true"
+    # Red: modo del esquema ("none"/"limited"/"full"), no booleano.
+    # Network: schema mode ("none"/"limited"/"full"), not a boolean.
+    local nf="${CURRENT_NETWORK:-none}"
+    case "$nf" in true) nf="full" ;; false|"") nf="none" ;; esac
     local args=(--name "$aid" --version "$CURRENT_VERSION" \
         --description "$CURRENT_DESC" --entrypoint "$ep" \
         --gui="$gf" --network="$nf" --toolkit "$CURRENT_TOOLKIT")

@@ -19,7 +19,7 @@ runtime，Packbox 将内容保存在一个按内容寻址的存储（BLAKE3 CAS�
 90 % 库的应用只存储这 10 % 的差异部分。
 
 > [!IMPORTANT]
-> **Beta 状态 (v0.3.0)。** 系统已增强核心稳定性，实现了 LRU 垃圾回收、导出时的 Zstd 压缩以及现代的 GTK4 图形界面。
+> **Beta 状态 (v0.3.0)。** 系统已增强核心稳定性，实现了 LRU 垃圾回收、导出时的 Zstd 压缩。
 
 ---
 
@@ -82,7 +82,7 @@ Packbox 使用 **Content-Addressable Storage (CAS)**、**BLAKE3** 哈希和
 | 分发                 | Flathub + OSTree remotes    | 并发 HTTP 远程仓库                  |
 | 签名                 | GPG                         | ed25519（`.pbox.sig`）               |
 | 沙箱                 | bwrap + seccomp + portals   | bwrap + seccomp + dbus-proxy + portals |
-| 界面                 | GNOME Software / CLI        | **GUI (GTK4)** + TUI + CLI            |
+| 界面                 | GNOME Software / CLI        | **TUI** + CLI                          |
 | 每应用开销           | 若 runtime 不同则约 100 %   | 应用间共享时 **约 5–15 %**           |
 
 ---
@@ -134,10 +134,7 @@ packbox-diagnose
 
 ## 快速上手
 
-### 1. 图形界面 (推荐)
-运行 `packbox-gui` 来管理应用、配置沙箱权限并实时监控存储空间节省情况。
-
-### 2. 交互式打包器 (TUI)
+### 1. 交互式打包器 (TUI)
 
 ```bash
 ./packbox-packager.sh
@@ -147,7 +144,7 @@ packbox-diagnose
 `.pbox` 文件存放在 `~/.local/share/packbox/exports/`。完成后，它会询问是否
 同时**将其安装到此设备**（默认 **否**，以避免污染系统）。要安装 `.pbox`，请使用选项 **5 (导入)**。
 
-### 3. 命令行
+### 2. 命令行
 
 ```bash
 # 打包一个目录
@@ -172,11 +169,10 @@ packbox-update org.ejemplo.miapp ./nuevo/manifest.json
 
 ## 可用命令
 
-Packbox v0.3.0 在 `~/.packbox/bin/` 中包含 **16 个 Go 二进制文件**：
+Packbox v0.3.0 在 `~/.packbox/bin/` 中包含 **15 个 Go 二进制文件**：
 
 | 命令               | 用途                                                          |
 |--------------------|--------------------------------------------------------------------|
-| `packbox-gui`      | 用于管理应用和权限的图形界面                                      |
 | `packbox-pack`     | 将目录按 CAS 块进行哈希并生成 `manifest.json`        |
 | `packbox-install`  | 从清单安装应用（+ `--desktop`/`--remove-desktop`） |
 | `packbox-run`      | 在 `bwrap` 沙箱中运行应用（overlay A/C，私有 HOME）   |
@@ -253,7 +249,7 @@ Packbox v0.3.0 在 `~/.packbox/bin/` 中包含 **16 个 Go 二进制文件**：
 - [x] LRU 垃圾回收
 
 ### v0.2 — 范围
-- [x] GTK4 GUI 前端
+- [ ] GTK4 GUI 前端（暂缓）
 - [ ] 预编译的 x86_64 和 aarch64 二进制文件
 - [ ] 签名的中央索引/仓库
 

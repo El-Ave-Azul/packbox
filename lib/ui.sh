@@ -1,24 +1,29 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034  # usadas por los archivos que sourcean esta librería
 # =============================================================================
-# lib/ui.sh — Funciones de presentación (colores, iconos, barras).
-# lib/ui.sh — Presentation functions (colors, icons, bars).
+# lib/ui.sh — Funciones de presentación (colores, iconos, cajas, barras).
+# lib/ui.sh — Presentation functions (colors, icons, boxes, bars).
+#
+# Look: cajas con bordes redondeados (unicode) o ASCII como fallback.
+# Look: rounded-box frames (unicode) with an ASCII fallback.
 #
 # Asume / Assumes: nada / nothing
-# Provee / Provides: _num, info, ok, warn, err, det, hdr, box_ok, progress, hs
+# Provee / Provides: _num, info, ok, warn, det, err, fail, hdr, box_ok,
+#                    progress, hs, pb_rule, panel_top, panel_bottom, menu_item,
+#                    pb_banner, pb_status, kv
 # =============================================================================
 
 # ─── Colores ─────────────────────────────────────────────────────────────────
 # ─── Colors ──────────────────────────────────────────────────────────────────
 if [[ -t 1 ]]; then
-    R='\033[0;31m'; G='\033[0;32m'; Y='\033[1;33m'; B='\033[0;34m'
-    C='\033[0;36m'; M='\033[0;35m'; BD='\033[1m'; DM='\033[2m'; N='\033[0m'
+    R=$'\033[0;31m'; G=$'\033[0;32m'; Y=$'\033[1;33m'; B=$'\033[0;34m'
+    C=$'\033[0;36m'; M=$'\033[0;35m'; BD=$'\033[1m'; DM=$'\033[2m'; N=$'\033[0m'
 else
     R=''; G=''; Y=''; B=''; C=''; M=''; BD=''; DM=''; N=''
 fi
 
-# ─── Iconos (UTF-8 si el locale lo soporta) ─────────────────────────────────
-# ─── Icons (UTF-8 if locale supports it) ────────────────────────────────────
+# ─── Iconos y bordes (UTF-8 si el locale lo soporta) ─────────────────────────
+# ─── Icons and borders (UTF-8 if locale supports it) ─────────────────────────
 _UTF8=0
 case "${LC_ALL:-}${LC_CTYPE:-}${LANG:-}" in
     *UTF-8*|*utf-8*|*UTF8*|*utf8*) _UTF8=1 ;;
@@ -26,15 +31,23 @@ esac
 if [[ $_UTF8 -eq 1 ]]; then
     HR="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     HR_T="───────────────────────────────────────────────────────────────"
-    ARROW="→"; BULLET="·"; PB_F="█"; PB_E="░"; CHK="✓"; XMK="✗"
+    ARROW="▸"; BULLET="·"; PB_F="█"; PB_E="░"; CHK="✓"; XMK="✗"
+    PB_BOX_TL="╭"; PB_BOX_TR="╮"; PB_BOX_BL="╰"; PB_BOX_BR="╯"
+    PB_BOX_H="─"; PB_BOX_V="│"
 else
     HR="==============================================================="
     HR_T="---------------------------------------------------------------"
-    ARROW="->"; BULLET="*"; PB_F="#"; PB_E="-"; CHK="+"; XMK="x"
+    ARROW=">"; BULLET="*"; PB_F="#"; PB_E="-"; CHK="+"; XMK="x"
+    PB_BOX_TL="+"; PB_BOX_TR="+"; PB_BOX_BL="+"; PB_BOX_BR="+"
+    PB_BOX_H="-"; PB_BOX_V="|"
 fi
 
-# ─── Saneador numérico ───────────────────────────────────────────────────────
-# ─── Numeric sanitizer ───────────────────────────────────────────────────────
+# Panel inner width in characters (content between the vertical borders).
+# Ancho interior del panel en caracteres (contenido entre los bordes).
+PB_W="${PB_W:-61}"
+
+# ─── Utilidades internas ─────────────────────────────────────────────────────
+# ─── Internal helpers ────────────────────────────────────────────────────────
 # _num <value> — devuelve el valor si es un entero no negativo, o "0".
 # _num <value> — returns the value if it's a non-negative integer, else "0".
 _num() {
@@ -44,6 +57,27 @@ _num() {
     else
         printf '0'
     fi
+}
+
+# _pb_repeat <n> <char> — repite <char> <n> veces.
+# _pb_repeat <n> <char> — repeats <char> <n> times.
+_pb_repeat() {
+    local n="${1:-0}" c="${2:- }" s
+    (( n < 0 )) && n=0
+    printf -v s '%*s' "$n" ''
+    printf '%s' "${s// /$c}"
+}
+
+# _pb_row <plain> <rendered> — una fila del panel. <rendered> debe tener el
+# mismo ancho visible que <plain> (colores aparte).
+# _pb_row <plain> <rendered> — one panel row. <rendered> must have the same
+# visible width as <plain> (colors aside).
+_pb_row() {
+    local plain="$1" rendered="$2" pad sp
+    pad=$(( PB_W - ${#plain} ))
+    (( pad < 0 )) && pad=0
+    printf -v sp '%*s' "$pad" ''
+    printf '  %s %s%s %s\n' "${C}${PB_BOX_V}${N}" "$rendered" "$sp" "${C}${PB_BOX_V}${N}"
 }
 
 # ─── Mensajes ────────────────────────────────────────────────────────────────
@@ -69,21 +103,104 @@ fail() {
     return 1
 }
 
-# ─── Encabezados ─────────────────────────────────────────────────────────────
-# ─── Headers ─────────────────────────────────────────────────────────────────
+# ─── Reglas y encabezados ────────────────────────────────────────────────────
+# ─── Rules and headers ───────────────────────────────────────────────────────
+# pb_rule [color] — regla horizontal a lo ancho del panel.
+# pb_rule [color] — horizontal rule across the panel width.
+pb_rule() {
+    printf '  %s%s%s\n' "${1:-$DM}" "$(_pb_repeat $((PB_W + 2)) "$PB_BOX_H")" "${N}"
+}
+
+# hdr <text> — encabezado de sección con marcador.
+# hdr <text> — section header with a marker.
 hdr() {
     echo ""
-    echo -e "${C}${BD}${HR_T}${N}"
-    echo -e "${C}${BD}  ${ARROW} ${1:-}${N}"
-    echo -e "${C}${BD}${HR_T}${N}"
+    echo -e "  ${C}${BD}${ARROW} ${1:-}${N}"
+    echo -e "  ${C}${HR_T}${N}"
     echo ""
 }
 
+# kv <label> <value> — fila etiqueta/valor alineada (por caracteres, no bytes).
+# kv <label> <value> — aligned label/value row (by characters, not bytes).
+kv() {
+    local label="${1:-}" value="${2:-}" pad sp
+    pad=$(( 16 - ${#label} ))
+    (( pad < 1 )) && pad=1
+    printf -v sp '%*s' "$pad" ''
+    printf '  %s%s%s%s %s\n' "${DM}" "$label" "$sp" "${N}" "$value"
+}
+
+# ─── Cajas / paneles ─────────────────────────────────────────────────────────
+# ─── Boxes / panels ──────────────────────────────────────────────────────────
+# panel_top [title] — borde superior; con título va incrustado en la línea.
+# panel_top [title] — top border; with a title it is embedded in the line.
+panel_top() {
+    local title="${1:-}" inner=$((PB_W + 2))
+    if [[ -z "$title" ]]; then
+        printf '  %s%s%s%s%s\n' "${C}${BD}" "$PB_BOX_TL" \
+            "$(_pb_repeat "$inner" "$PB_BOX_H")" "$PB_BOX_TR" "${N}"
+        return
+    fi
+    local text="─ ${title} " fill
+    fill=$(( inner - ${#text} ))
+    (( fill < 0 )) && fill=0
+    printf '  %s%s%s%s%s%s%s\n' "${C}${BD}" "$PB_BOX_TL" "$text" \
+        "$(_pb_repeat "$fill" "$PB_BOX_H")" "$PB_BOX_TR" "${N}"
+}
+
+# panel_bottom — borde inferior.
+# panel_bottom — bottom border.
+panel_bottom() {
+    printf '  %s%s%s%s%s\n' "${C}${BD}" "$PB_BOX_BL" \
+        "$(_pb_repeat $((PB_W + 2)) "$PB_BOX_H")" "$PB_BOX_BR" "${N}"
+}
+
+# menu_item <key> <label> [desc] [color] [label-color] — una fila de menú.
+# menu_item <key> <label> [desc] [color] [label-color] — one menu row.
+menu_item() {
+    local key="${1:-}" label="${2:-}" desc="${3:-}" col="${4:-$C}" lcol="${5:-}" k
+    printf -v k '%-2s' "$key"
+    local plain="  ${k}  ${label}"
+    local rendered="  ${col}${BD}${k}${N}  ${lcol}${label}${N}"
+    if [[ -n "$desc" ]]; then
+        plain="${plain}   ${BULLET} ${desc}"
+        rendered="${rendered}   ${DM}${BULLET} ${desc}${N}"
+    fi
+    _pb_row "$plain" "$rendered"
+}
+
+# pb_banner <title> <subtitle> [right] — banner enmarcado.
+# pb_banner <title> <subtitle> [right] — framed banner.
+pb_banner() {
+    local title="${1:-}" sub="${2:-}" right="${3:-}" pad sp
+    panel_top
+    pad=$(( PB_W - 2 - ${#title} - ${#right} ))
+    (( pad < 1 )) && pad=1
+    printf -v sp '%*s' "$pad" ''
+    _pb_row "  ${title}${sp}${right}" "  ${BD}${C}${title}${N}${sp}${DM}${right}${N}"
+    if [[ -n "$sub" ]]; then
+        _pb_row "  ${sub}" "  ${DM}${sub}${N}"
+    fi
+    panel_bottom
+}
+
+# pb_status <left> <right> — barra de estado de una línea.
+# pb_status <left> <right> — one-line status bar.
+pb_status() {
+    local left="${1:-}" right="${2:-}" pad sp
+    pad=$(( PB_W - ${#left} - ${#right} ))
+    (( pad < 1 )) && pad=1
+    printf -v sp '%*s' "$pad" ''
+    printf '  %s%s%s%s%s\n' "${DM}" "$left" "$sp" "$right" "${N}"
+}
+
+# box_ok <text> — caja de éxito.
+# box_ok <text> — success box.
 box_ok() {
     echo ""
-    echo -e "  ${G}${HR}${N}"
-    echo -e "  ${G}${BD}     ${1:-}${N}"
-    echo -e "  ${G}${HR}${N}"
+    panel_top
+    _pb_row "  ${CHK} ${1:-}" "  ${G}${BD}${CHK} ${1:-}${N}"
+    panel_bottom
     echo ""
 }
 

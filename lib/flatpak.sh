@@ -179,7 +179,7 @@ current_from_flatpak() {
     # Context: red, x11, y las libs del runtime para resolver dependencias.
     shared=$(flatpak_meta "$dep" shared)
     sockets=$(flatpak_meta "$dep" sockets)
-    [[ "$shared" == *network* ]] && CURRENT_NETWORK="true" || CURRENT_NETWORK="false"
+    [[ "$shared" == *network* ]] && CURRENT_NETWORK="full" || CURRENT_NETWORK="none"
     [[ "$sockets" == *x11* ]] && CURRENT_X11="1"
 
     # LD_LIBRARY_PATH con el runtime: sin él, ldd no resuelve las libs de la app

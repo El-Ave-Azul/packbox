@@ -20,7 +20,7 @@ direccionado por contenido (BLAKE3 CAS), con **chunking definido por contenido
 librerías solo almacenan el 10 % que difiere.
 
 > [!IMPORTANT]
-> **Estado Beta (v0.3.0).** El sistema ha evolucionado la estabilidad del núcleo, implementando recolección de basura LRU, compresión Zstd en el export y una interfaz gráfica moderna en GTK4.
+> **Estado Beta (v0.3.0).** El sistema ha evolucionado la estabilidad del núcleo, implementando recolección de basura LRU y compresión Zstd en el export.
 
 ---
 
@@ -92,7 +92,7 @@ versionada) que varias apps comparten, y deja las librerías universales
 | Distribución         | Flathub + remotes OSTree    | Remoto HTTP concurrente              |
 | Firmas               | GPG                         | ed25519 (`.pbox.sig`)                |
 | Sandbox              | bwrap + seccomp + portales  | bwrap + seccomp + dbus-proxy + portales |
-| Interfaz             | GNOME Software / CLI        | **GUI (GTK4)** + TUI + CLI            |
+| Interfaz             | GNOME Software / CLI        | **TUI** + CLI                        |
 | Overhead por app     | ~100 % si runtime distinto  | **~5–15 %** con apps que comparten   |
 
 ---
@@ -144,10 +144,7 @@ packbox-diagnose
 
 ## Uso rápido
 
-### 1. Interfaz Gráfica (Recomendado)
-Ejecuta `packbox-gui` para gestionar tus aplicaciones, configurar permisos de sandbox y monitorizar el ahorro de espacio en tiempo real.
-
-### 2. Empaquetador interactivo (TUI)
+### 1. Empaquetador interactivo (TUI)
 
 ```bash
 ./packbox-packager.sh
@@ -158,7 +155,7 @@ La opción **1 (Empaquetar)** busca las apps **ya instaladas** y **genera un**
 quieres **instalarla en este equipo** (por defecto **no**, para no ensuciar tu
 sistema). Para instalar un `.pbox` usa la opción **5 (Importar)**.
 
-### 3. Línea de comandos
+### 2. Línea de comandos
 
 ```bash
 # Empaquetar un directorio
@@ -183,11 +180,10 @@ packbox-update org.ejemplo.miapp ./nuevo/manifest.json
 
 ## Comandos disponibles
 
-Packbox v0.3.0 incluye **16 binarios Go** en `~/.packbox/bin/`:
+Packbox v0.3.0 incluye **15 binarios Go** en `~/.packbox/bin/`:
 
 | Comando            | Propósito                                                          |
 |--------------------|--------------------------------------------------------------------|
-| `packbox-gui`      | Interfaz gráfica para gestión de apps y permisos                   |
 | `packbox-pack`     | Hashea un directorio en chunks CAS y genera `manifest.json`        |
 | `packbox-install`  | Instala una app desde el manifiesto (+ `--desktop`/`--remove-desktop`) |
 | `packbox-run`      | Ejecuta la app en el sandbox `bwrap` (overlay A/C, HOME privado)   |
@@ -264,7 +260,7 @@ Packbox v0.3.0 incluye **16 binarios Go** en `~/.packbox/bin/`:
 - [x] Recolección de basura LRU
 
 ### v0.2 — Alcance
-- [x] Frontend GUI en GTK4
+- [ ] Frontend GUI en GTK4 (aplazado)
 - [ ] Binarios precompilados x86_64 y aarch64
 - [ ] Índice/repositorio central firmado
 

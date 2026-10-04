@@ -20,7 +20,7 @@ indirizzato per contenuto (BLAKE3 CAS), con **chunking definito per contenuto
 librerie memorizzano solo il 10% che differisce.
 
 > [!IMPORTANT]
-> **Stato Beta (v0.3.0).** Il sistema ha evoluto la stabilità del core, implementando la garbage collection LRU, la compressione Zstd in fase di export e un'interfaccia grafica moderna in GTK4.
+> **Stato Beta (v0.3.0).** Il sistema ha evoluto la stabilità del core, implementando la garbage collection LRU e la compressione Zstd in fase di export.
 
 ---
 
@@ -89,7 +89,7 @@ versionata) che più app condividono, e lascia le librerie universali
 | Distribuzione         | Flathub + remotes OSTree    | Remoto HTTP concorrente              |
 | Firme               | GPG                         | ed25519 (`.pbox.sig`)                |
 | Sandbox              | bwrap + seccomp + portali  | bwrap + seccomp + dbus-proxy + portali |
-| Interfaccia             | GNOME Software / CLI        | **GUI (GTK4)** + TUI + CLI            |
+| Interfaccia             | GNOME Software / CLI        | **TUI** + CLI                          |
 | Overhead per app     | ~100 % se runtime distinto  | **~5–15 %** con app che condividono   |
 
 ---
@@ -141,10 +141,7 @@ packbox-diagnose
 
 ## Avvio rapido
 
-### 1. Interfaccia Grafica (Consigliato)
-Esegui `packbox-gui` per gestire le tue applicazioni, configurare i permessi del sandbox e monitorare il risparmio di spazio in tempo reale.
-
-### 2. Impacchettatore interattivo (TUI)
+### 1. Impacchettatore interattivo (TUI)
 
 ```bash
 ./packbox-packager.sh
@@ -155,7 +152,7 @@ L'opzione **1 (Impacchetta)** cerca le app **già installate** e **genera un**
 **installarla su questo computer** (per impostazione predefinita **no**, per non sporcare il tuo
 sistema). Per installare un `.pbox` usa l'opzione **5 (Importa)**.
 
-### 3. Riga di comando
+### 2. Riga di comando
 
 ```bash
 # Impacchetta una directory
@@ -180,11 +177,10 @@ packbox-update org.esempio.miapp ./nuovo/manifest.json
 
 ## Comandi disponibili
 
-Packbox v0.3.0 include **16 binari Go** in `~/.packbox/bin/`:
+Packbox v0.3.0 include **15 binari Go** in `~/.packbox/bin/`:
 
 | Comando            | Scopo                                                          |
 |--------------------|--------------------------------------------------------------------|
-| `packbox-gui`      | Interfaccia grafica per la gestione di app e permessi               |
 | `packbox-pack`     | Crea l'hash di una directory in chunk CAS e genera `manifest.json`   |
 | `packbox-install`  | Installa un'app dal manifesto (+ `--desktop`/`--remove-desktop`) |
 | `packbox-run`      | Esegue l'app nel sandbox `bwrap` (overlay A/C, HOME privata)   |
@@ -261,7 +257,7 @@ Packbox v0.3.0 include **16 binari Go** in `~/.packbox/bin/`:
 - [x] Garbage collection LRU
 
 ### v0.2 — Scope
-- [x] Frontend GUI in GTK4
+- [ ] Frontend GUI in GTK4 (rinviato)
 - [ ] Binari precompilati x86_64 e aarch64
 - [ ] Indice/repository centrale firmato
 

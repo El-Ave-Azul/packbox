@@ -51,17 +51,16 @@ HELP
     # ─── Main menu ──────────────────────────────────────────────────────────
     while true; do
         show_banner_installer
-        echo -e "  ${BD}$(t L_WELCOME)${N}"
-        echo -e "  ${DM}Lang: $(t L_LANG_NAME)${N}"
+        pb_status "$(t L_WELCOME)" "$(t L_LANG_NAME)"
         echo ""
-        echo -e "  ${C}1${N}  $(t L_MENU_INSTALL)"
-        echo -e "  ${C}2${N}  ${R}$(t L_MENU_UNINSTALL)${N}"
-        echo -e "  ${C}3${N}  $(_tt L_7_LANG "Cambiar idioma") ${DM}($(t L_LANG_NAME))${N}"
-        echo -e "  ${C}0${N}  $(t L_MENU_EXIT)"
+        panel_top
+        menu_item 1 "$(t L_MENU_INSTALL)"
+        menu_item 2 "$(t L_MENU_UNINSTALL)" "" "$R"
+        menu_item 3 "$(_tt L_7_LANG "Cambiar idioma")" "$(t L_LANG_NAME)"
+        menu_item 0 "$(t L_MENU_EXIT)"
+        panel_bottom
         echo ""
-        echo -e "  ${DM}${HR_T}${N}"
-        echo ""
-        echo -en "  ${BD}> $(t L_MENU_PROMPT) [0-3]: ${N}"
+        echo -en "  ${BD}${ARROW} $(t L_MENU_PROMPT) [0-3]: ${N}"
         local opt
         read -r opt
         case "$opt" in
@@ -92,13 +91,8 @@ HELP
 # ─── Installer banner ────────────────────────────────────────────────────────
 show_banner_installer() {
     clear
-    echo -e "${BD}${C}"
-    echo "  ═══════════════════════════════════════════════════════════════"
-    echo "   $(t L_INSTALLER_TITLE)"
-    echo "   v${PACKBOX_VERSION} · i18n (9) · Go ${GO_VERSION:-?} en ~/.packbox/go · Journal"
-    echo "   Install: ~/.packbox (oculto / hidden)"
-    echo "  ═══════════════════════════════════════════════════════════════"
-    echo -e "${N}"
+    pb_banner "$(t L_INSTALLER_TITLE)" "Go ${GO_VERSION:-?} · ~/.packbox · journal" "v${PACKBOX_VERSION}"
+    echo ""
 }
 
 # ─── Cambiar idioma sin salir ────────────────────────────────────────────────

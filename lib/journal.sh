@@ -100,9 +100,14 @@ journal_list() {
 # journal_count <section> — cuenta entradas de una sección.
 # journal_count <section> — counts entries of a section.
 journal_count() {
-    local section="$1"
+    local section="$1" n
     [[ -f "$PACKBOX_JOURNAL" ]] || { echo 0; return; }
-    grep -c "^${section}: " "$PACKBOX_JOURNAL" 2>/dev/null || echo 0
+    # Ojo: `grep -c` YA imprime 0 cuando no hay coincidencias (y sale con 1);
+    # encadenar `|| echo 0` duplicaría el cero ("0\n0").
+    # Note: `grep -c` ALREADY prints 0 on no match (and exits 1); chaining
+    # `|| echo 0` would duplicate the zero ("0\n0").
+    n=$(grep -c "^${section}: " "$PACKBOX_JOURNAL" 2>/dev/null)
+    echo "${n:-0}"
 }
 
 # journal_get <section> <key> — lee un valor puntual.

@@ -19,7 +19,7 @@ Flatpak에서 영감을 받았지만 재사용 모델은 다릅니다. 앱마다
 라이브러리의 90 %를 공유하는 두 앱은 서로 다른 10 %만 저장합니다.
 
 > [!IMPORTANT]
-> **베타 상태 (v0.3.0).** 코어 안정성이 향상되었으며, LRU 가비지 컬렉션, 내보내기 시의 Zstd 압축 및 GTK4 기반의 현대적인 그래픽 인터페이스가 구현되었습니다.
+> **베타 상태 (v0.3.0).** 코어 안정성이 향상되었으며, LRU 가비지 컬렉션, 내보내기 시의 Zstd 압축이 구현되었습니다.
 
 ---
 
@@ -80,7 +80,7 @@ Packbox는 **BLAKE3** 해싱과 최적화된 **콘텐츠 기반 청킹** 을 사
 | 배포                 | Flathub + OSTree remotes    | 병렬 HTTP 원격 저장소              |
 | 서명                 | GPG                         | ed25519 (`.pbox.sig`)                |
 | 샌드박스             | bwrap + seccomp + 포털      | bwrap + seccomp + dbus-proxy + 포털  |
-| 인터페이스           | GNOME Software / CLI        | **GUI (GTK4)** + TUI + CLI            |
+| 인터페이스           | GNOME Software / CLI        | **TUI** + CLI                          |
 | 앱당 오버헤드        | 런타임이 다르면 ~100 %      | 공유 앱 기준 **~5–15 %**             |
 
 ---
@@ -132,10 +132,7 @@ packbox-diagnose
 
 ## 빠른 시작
 
-### 1. 그래픽 인터페이스 (권장)
-`packbox-gui`를 실행하여 애플리케이션 관리, 샌드박스 권한 설정 및 실시간 저장 공간 절감 모니터링을 수행하십시오.
-
-### 2. 대화형 패키저 (TUI)
+### 1. 대화형 패키저 (TUI)
 
 ```bash
 ./packbox-packager.sh
@@ -145,7 +142,7 @@ packbox-diagnose
 `~/.local/share/packbox/exports/` 에 `.pbox` 를 **생성**합니다. 완료 후, 이를
 **이 머신에 설치**할지 묻습니다(기본값은 **아니오**이며, 시스템을 더럽히지 않기 위함입니다). `.pbox` 를 설치하려면 옵션 **5 (가져오기)** 를 사용하십시오.
 
-### 3. 명령줄
+### 2. 명령줄
 
 ```bash
 # 디렉터리 패키징
@@ -170,11 +167,10 @@ packbox-update org.ejemplo.miapp ./nuevo/manifest.json
 
 ## 사용 가능한 명령어
 
-Packbox v0.3.0은 `~/.packbox/bin/`에 **16개의 Go 바이너리** 를 포함합니다:
+Packbox v0.3.0은 `~/.packbox/bin/`에 **15개의 Go 바이너리** 를 포함합니다:
 
 | 명령어             | 용도                                                          |
 |--------------------|--------------------------------------------------------------------|
-| `packbox-gui`      | 앱 및 권한 관리를 위한 그래픽 인터페이스                           |
 | `packbox-pack`     | 디렉터리를 CAS 청크로 해싱하고 `manifest.json`을 생성        |
 | `packbox-install`  | 매니페스트에서 앱 설치 (+ `--desktop`/`--remove-desktop`) |
 | `packbox-run`      | `bwrap` 샌드박스에서 앱 실행 (A/C 오버레이, 전용 HOME)   |
@@ -251,7 +247,7 @@ Packbox v0.3.0은 `~/.packbox/bin/`에 **16개의 Go 바이너리** 를 포함�
 - [x] LRU 가비지 컬렉션
 
 ### v0.2 — 범위
-- [x] GTK4 GUI 프런트엔드
+- [ ] GTK4 GUI 프런트엔드 (보류)
 - [ ] 사전 컴파일된 x86_64 및 aarch64 바이너리
 - [ ] 서명된 중앙 인덱스/저장소
 
