@@ -77,6 +77,20 @@ func (s *Source) Manifest(appID string) (*manifest.Manifest, error) {
 	return manifest.Load(name)
 }
 
+// Index downloads index.json and, if present, its detached signature
+// index.json.sig (nil when there is none).
+// Index descarga index.json y, si está, su firma separada index.json.sig (nil
+// si no hay).
+func (s *Source) Index() (data, sig []byte, err error) {
+	base := strings.TrimRight(s.Base, "/")
+	data, err = s.get(base + "/index.json")
+	if err != nil {
+		return nil, nil, err
+	}
+	sig, _ = s.get(base + "/index.json.sig") // optional
+	return data, sig, nil
+}
+
 // Chunk downloads a chunk and verifies its hash.
 // Chunk descarga un chunk y verifica su hash.
 func (s *Source) Chunk(h string) ([]byte, error) {

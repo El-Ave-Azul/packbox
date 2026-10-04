@@ -183,7 +183,7 @@ Packbox v0.3.0은 `~/.packbox/bin/`에 **15개의 Go 바이너리** 를 포함�
 | `packbox-update`   | 청크를 재사용하여 앱 업데이트 + 델타 보고서 (`--no-gc`)   |
 | `packbox-module`   | 모듈/셀: `list`, `create`, `cell <lib>...`                  |
 | `packbox-sign`     | ed25519 키 및 서명: `keygen`, `sign`, `verify`, `trust`       |
-| `packbox-fetch`    | 병렬 HTTP 원격: `publish <id> <dir>` 및 `fetch <id> --from <url>`      |
+| `packbox-fetch`    | HTTP 원격: `publish`, **서명된 인덱스**를 사용하는 `index`/`search`/`install`, 그리고 `fetch` (병렬 델타) |
 | `packbox-debug`    | 설치된 앱의 디버그 심볼(별도 셀)을 연결  |
 | `packbox-diagnose` | 버그 보고용 환경 보고서                          |
 
@@ -214,7 +214,7 @@ Packbox v0.3.0은 `~/.packbox/bin/`에 **15개의 Go 바이너리** 를 포함�
 - **샌드박스** — `bwrap --unshare-all --cap-drop ALL --clearenv`, **seccomp**, `xdg-dbus-proxy`를 사용한 **필터링된 D-Bus**, **전용 HOME**, 세분화된 네트워크 및 **멀티미디어 지원** (PipeWire/PulseAudio).
 - **오버레이 기반 레이어** — `/app`은 `--overlay-src` (C가 아래, A가 위)로 구성되며, S (호스트)는 `/usr`를 통해 제공됩니다.
 - **Host contract** — `packbox-verify` 가 호스트가 요구된 심볼 (ABI) 을 제공하는지 확인합니다.
-- **서명 및 원격** — `packbox-sign` (ed25519) 이 `.pbox` 에 서명하고, `packbox-fetch` 가 **병렬 다운로드**를 통해 델타를 게시하고 다운로드합니다.
+- **서명 및 원격** — `packbox-sign` (ed25519) 이 `.pbox` 와 **저장소 인덱스**에 서명하고, `packbox-fetch` 는 게시, **검색** (`search`), id 설치를 수행하며, **병렬 다운로드**를 지원합니다.
 
 ---
 
@@ -249,7 +249,7 @@ Packbox v0.3.0은 `~/.packbox/bin/`에 **15개의 Go 바이너리** 를 포함�
 ### v0.2 — 범위
 - [ ] GTK4 GUI 프런트엔드 (보류)
 - [ ] 사전 컴파일된 x86_64 및 aarch64 바이너리
-- [ ] 서명된 중앙 인덱스/저장소
+- [x] 서명된 중앙 인덱스/저장소
 
 ### 향후
 - [ ] Flatpak 런타임 임포터 (best-effort)

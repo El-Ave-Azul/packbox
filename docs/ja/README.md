@@ -193,7 +193,7 @@ Packbox v0.3.0 には `~/.packbox/bin/` に **15 個の Go バイナリ** が含
 | `packbox-update`   | チャンクを再利用してアプリを更新する + デルタレポート (`--no-gc`)   |
 | `packbox-module`   | モジュール/セル: `list`、`create`、`cell <lib>...`                   |
 | `packbox-sign`     | ed25519 のキーと署名: `keygen`、`sign`, `verify`, `trust`       |
-| `packbox-fetch`    | 並行 HTTP リモート: `publish <id> <dir>` と `fetch <id> --from <url>` |
+| `packbox-fetch`    | HTTP リモート: `publish`、**署名付きインデックス**を使う `index`/`search`/`install`、そして `fetch` (並行デルタ) |
 | `packbox-debug`    | インストール済みアプリのデバッグシンボル（別のセル）を添付する |
 | `packbox-diagnose` | バグ報告用の環境レポート                                 |
 
@@ -224,7 +224,7 @@ Packbox v0.3.0 には `~/.packbox/bin/` に **15 個の Go バイナリ** が含
 - **サンドボックス** — `bwrap --unshare-all --cap-drop ALL --clearenv`、**seccomp**、`xdg-dbus-proxy` による**フィルタ済み D-Bus**、**プライベート HOME**、細粒度ネットワーク、および**マルチメディアサポート** (PipeWire/PulseAudio)。
 - **オーバーレイによるレイヤ化** — `/app` は `--overlay-src` (C が下、A が上) で構成され、S (ホスト) は `/usr` 経由で提供されます。
 - **Host contract** — `packbox-verify` は、ホストが必要なシンボル (ABI) を提供しているかを確認します。
-- **署名とリモート** — `packbox-sign` (ed25519) は `.pbox` に署名し、`packbox-fetch` は**並行ダウンロード**を介してデルタを公開およびダウンロードします。
+- **署名とリモート** — `packbox-sign` (ed25519) は `.pbox` と**リポジトリインデックス**に署名し、`packbox-fetch` は公開、**検索** (`search`)、id によるインストールを行い、**並行ダウンロード**に対応します。
 
 ---
 
@@ -259,7 +259,7 @@ Packbox v0.3.0 には `~/.packbox/bin/` に **15 個の Go バイナリ** が含
 ### v0.2 — スコープ
 - [ ] GTK4 GUI フロントエンド (延期)
 - [ ] x86_64 および aarch64 の事前コンパイル済みバイナリ
-- [ ] 署名付き中央インデックス/リポジトリ
+- [x] 署名付き中央インデックス/リポジトリ
 
 ### 将来
 - [ ] Flatpak ランタイム インポータ (best-effort)

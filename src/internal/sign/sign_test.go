@@ -103,3 +103,48 @@ func TestTrustRejectsGarbage(t *testing.T) {
 		t.Fatal("garbage public key accepted")
 	}
 }
+
+func TestVerifyData(t *testing.T) {
+	cfg := t.TempDir()
+	if _, err := Keygen(cfg); err != nil {
+		t.Fatal(err)
+	}
+	data := []byte(`{"schema_version":"1","apps":[]}`)
+
+	// Sign a file holding exactly those bytes and reuse its signature JSON.
+	file := filepath.Join(t.TempDir(), "index.json")
+	if err := os.WriteFile(file, data, 0644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := SignFile(file, cfg); err != nil {
+		t.Fatal(err)
+	}
+	sigJSON, err := os.ReadFile(SigPath(file))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	signer, err := VerifyData(data, sigJSON, cfg)
+	if err != nil {
+		t.Fatalf("VerifyData: %v", err)
+	}
+	if signer == "" {
+		t.Fatal("empty signer")
+	}
+
+	// Same bytes verify; one flipped byte must not.
+	tampered := append([]byte{}, data...)
+	tampered[0] = 'X'
+	if _, err := VerifyData(tampered, sigJSON, cfg); err == nil {
+		t.Fatal("VerifyData accepted tampered data")
+	}
+
+	// A config trusting a different key must reject the signer.
+	cfgB := t.TempDir()
+	if _, err := Keygen(cfgB); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := VerifyData(data, sigJSON, cfgB); err == nil {
+		t.Fatal("VerifyData accepted an untrusted signer")
+	}
+}

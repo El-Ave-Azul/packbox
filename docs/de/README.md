@@ -193,7 +193,7 @@ Packbox v0.3.0 enthält **15 Go-Binärdateien** in `~/.packbox/bin/`:
 | `packbox-update`   | Aktualisiert eine App unter Wiederverwendung von Chunks + Delta-Bericht (`--no-gc`) |
 | `packbox-module`   | Module/Zellen: `list`, `create`, `cell <lib>...`                   |
 | `packbox-sign`     | ed25519-Schlüssel und -Signaturen: `keygen`, `sign`, `verify`, `trust` |
-| `packbox-fetch`    | Konkurrenter HTTP-Remote: `publish <id> <dir>` und `fetch <id> --from <url>` |
+| `packbox-fetch`    | HTTP-Remote: `publish`, `index`/`search`/`install` mit **signiertem Index**, und `fetch` (konkurrentes Delta) |
 | `packbox-debug`    | Hängt die Debug-Symbole (separate Zelle) einer installierten App an |
 | `packbox-diagnose` | Umgebungsbericht für Bug-Reports                                   |
 
@@ -224,7 +224,7 @@ Packbox v0.3.0 enthält **15 Go-Binärdateien** in `~/.packbox/bin/`:
 - **Sandbox** — `bwrap --unshare-all --cap-drop ALL --clearenv`, **seccomp**, **gefiltertes D-Bus** mit `xdg-dbus-proxy`, **privates HOME**, granulare Netzwerkrichtlinien und **Multimedia-Unterstützung** (PipeWire/PulseAudio).
 - **Schicht-Overlay** — `/app` wird mit `--overlay-src` zusammengesetzt (C unten, A oben); S (Host) kommt über `/usr`.
 - **Host contract** — `packbox-verify` prüft, dass der Host die erforderlichen Symbole (ABI) bereitstellt.
-- **Signaturen und Remote** — `packbox-sign` (ed25519) signiert das `.pbox`; `packbox-fetch` veröffentlicht und lädt das Delta mittels **konkurrenter Downloads** herunter.
+- **Signaturen und Remote** — `packbox-sign` (ed25519) signiert das `.pbox` und den **Repository-Index**; `packbox-fetch` veröffentlicht, **sucht** (`search`) und installiert per id, mit **konkurrenten Downloads**.
 
 ---
 
@@ -259,7 +259,7 @@ Packbox v0.3.0 enthält **15 Go-Binärdateien** in `~/.packbox/bin/`:
 ### v0.2 — Umfang
 - [ ] GUI-Frontend in GTK4 (aufgeschoben)
 - [ ] Vorkompilierte Binärdateien x86_64 und aarch64
-- [ ] Signierter zentraler Index/Repository
+- [x] Signierter zentraler Index/Repository
 
 ### Zukunft
 - [ ] Flatpak-Runtime-Importer (best-effort)

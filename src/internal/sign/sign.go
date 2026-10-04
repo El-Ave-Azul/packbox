@@ -125,12 +125,26 @@ func SignFile(file, configDir string) (string, error) {
 // VerifyFile comprueba file contra su firma separada y las claves de confianza.
 // Devuelve la clave pública del firmante (hex) si va bien.
 func VerifyFile(file, configDir string) (string, error) {
-	data, err := os.ReadFile(SigPath(file))
+	sigJSON, err := os.ReadFile(SigPath(file))
 	if err != nil {
 		return "", fmt.Errorf("no signature: %w", err)
 	}
+	payload, err := os.ReadFile(file)
+	if err != nil {
+		return "", err
+	}
+	return VerifyData(payload, sigJSON, configDir)
+}
+
+// VerifyData checks in-memory data against a detached-signature JSON blob and
+// the trusted keys, returning the signer's public key (hex). It is the
+// bytes-in-memory counterpart of VerifyFile (used for the repository index).
+// VerifyData comprueba datos en memoria contra un blob de firma JSON y las
+// claves de confianza, y devuelve la clave pública del firmante (hex). Es la
+// versión en memoria de VerifyFile (se usa para el índice del repositorio).
+func VerifyData(data, sigJSON []byte, configDir string) (string, error) {
 	var s Signature
-	if err := json.Unmarshal(data, &s); err != nil {
+	if err := json.Unmarshal(sigJSON, &s); err != nil {
 		return "", fmt.Errorf("bad signature file: %w", err)
 	}
 	if s.Algo != "ed25519" {
@@ -147,12 +161,9 @@ func VerifyFile(file, configDir string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("bad signature data")
 	}
-	digest, err := fileDigest(file)
-	if err != nil {
-		return "", err
-	}
-	if !ed25519.Verify(ed25519.PublicKey(pub), digest, sig) {
-		return "", fmt.Errorf("signature does not match (tampered package?)")
+	digest := sha256.Sum256(data)
+	if !ed25519.Verify(ed25519.PublicKey(pub), digest[:], sig) {
+		return "", fmt.Errorf("signature does not match (tampered data?)")
 	}
 	return hex.EncodeToString(pub), nil
 }

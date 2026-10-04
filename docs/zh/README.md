@@ -185,7 +185,7 @@ Packbox v0.3.0 在 `~/.packbox/bin/` 中包含 **15 个 Go 二进制文件**：
 | `packbox-update`   | 复用块更新应用 + 增量报告（`--no-gc`）   |
 | `packbox-module`   | 模块/单元：`list`、`create`、`cell <lib>...`                  |
 | `packbox-sign`     | ed25519 密钥与签名：`keygen`、`sign`, `verify`, `trust`       |
-| `packbox-fetch`    | 并发 HTTP 远程仓库：`publish <id> <dir>` 和 `fetch <id> --from <url>`      |
+| `packbox-fetch`    | HTTP 远程仓库：`publish`、使用**签名索引**的 `index`/`search`/`install`，以及 `fetch`（并发增量）      |
 | `packbox-debug`    | 附加已安装应用的调试符号（单独的单元）  |
 | `packbox-diagnose` | 用于 bug 报告的环境报告                          |
 
@@ -216,7 +216,7 @@ Packbox v0.3.0 在 `~/.packbox/bin/` 中包含 **15 个 Go 二进制文件**：
 - **沙箱** — `bwrap --unshare-all --cap-drop ALL --clearenv`、**seccomp**、使用 `xdg-dbus-proxy` 的**过滤 D-Bus**、**私有 HOME**、细粒度网络以及**多媒体支持** (PipeWire/PulseAudio)。
 - **分层 overlay** — `/app` 通过 `--overlay-src` 组合（C 在下，A 在上）；S（宿主）通过 `/usr` 提供。
 - **Host contract** — `packbox-verify` 检查宿主是否提供所需的符号 (ABI)。
-- **签名与远程仓库** — `packbox-sign` (ed25519) 对 `.pbox` 签名；`packbox-fetch` 通过**并发下载**发布和获取增量部分。
+- **签名与远程仓库** — `packbox-sign` (ed25519) 对 `.pbox` 和**仓库索引**签名；`packbox-fetch` 发布、**搜索**（`search`）并按 id 安装，支持**并发下载**。
 
 ---
 
@@ -251,7 +251,7 @@ Packbox v0.3.0 在 `~/.packbox/bin/` 中包含 **15 个 Go 二进制文件**：
 ### v0.2 — 范围
 - [ ] GTK4 GUI 前端（暂缓）
 - [ ] 预编译的 x86_64 和 aarch64 二进制文件
-- [ ] 签名的中央索引/仓库
+- [x] 签名的中央索引/仓库
 
 ### 未来
 - [ ] Flatpak runtime 导入器 (best-effort)

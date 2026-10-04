@@ -193,7 +193,7 @@ Packbox v0.3.0 inclut **15 binaires Go** dans `~/.packbox/bin/` :
 | `packbox-update`   | Met à jour une application en réutilisant les chunks + rapport de delta (`--no-gc`) |
 | `packbox-module`   | Modules/cellules : `list`, `create`, `cell <lib>...`               |
 | `packbox-sign`     | Clés et signatures ed25519 : `keygen`, `sign`, `verify`, `trust`   |
-| `packbox-fetch`    | Remote HTTP concurrent : `publish <id> <dir>` et `fetch <id> --from <url>` |
+| `packbox-fetch`    | Remote HTTP : `publish`, `index`/`search`/`install` avec un **index signé**, et `fetch` (delta concurrent) |
 | `packbox-debug`    | Attache les symboles de debug (cellule à part) d'une application installée |
 | `packbox-diagnose` | Rapport de l'environnement pour les rapports de bugs              |
 
@@ -224,7 +224,7 @@ Packbox v0.3.0 inclut **15 binaires Go** dans `~/.packbox/bin/` :
 - **Sandbox** — `bwrap --unshare-all --cap-drop ALL --clearenv`, **seccomp**, **D-Bus filtré** avec `xdg-dbus-proxy`, **HOME privé**, réseau granulaire et **Soutien Multimédia** (PipeWire/PulseAudio).
 - **Overlay de couches** — `/app` est composé avec `--overlay-src` (C en bas, A en haut) ; S (hôte) arrive via `/usr`.
 - **Host contract** — `packbox-verify` vérifie que l'hôte fournit les symboles requis (ABI).
-- **Signatures et remote** — `packbox-sign` (ed25519) signe le `.pbox` ; `packbox-fetch` publie et télécharge le delta via des **téléchargements concurrents**.
+- **Signatures et remote** — `packbox-sign` (ed25519) signe le `.pbox` et l'**index du dépôt** ; `packbox-fetch` publie, **recherche** (`search`) et installe par id, avec des **téléchargements concurrents**.
 
 ---
 
@@ -259,7 +259,7 @@ Packbox v0.3.0 inclut **15 binaires Go** dans `~/.packbox/bin/` :
 ### v0.2 — Portée
 - [ ] Frontend GUI en GTK4 (reporté)
 - [ ] Binaires précompilés x86_64 et aarch64
-- [ ] Index/dépôt central signé
+- [x] Index/dépôt central signé
 
 ### Futur
 - [ ] Importateur de runtimes Flatpak (best-effort)

@@ -245,7 +245,7 @@ O Packbox v0.2.0 inclui **15 binários Go** em `~/.packbox/bin/`:
 | `packbox-update`   | Atualiza um app reusando chunks + relatório de delta (`--no-gc`)   |
 | `packbox-module`   | Módulos/células: `list`, `create`, `cell <lib>...`                 |
 | `packbox-sign`     | Chaves e assinaturas ed25519: `keygen`, `sign`, `verify`, `trust`  |
-| `packbox-fetch`    | Remoto HTTP: `publish <id> <dir>` e `fetch <id> --from <url>`      |
+| `packbox-fetch`    | Remoto HTTP: `publish`, `index`/`search`/`install` com um **índice assinado**, e `fetch` (delta concorrente)      |
 | `packbox-debug`    | Anexa os símbolos de debug (célula separada) de um app instalado   |
 | `packbox-diagnose` | Relatório do ambiente para relatos de bugs                         |
 
@@ -314,8 +314,8 @@ O Packbox v0.2.0 inclui **15 binários Go** em `~/.packbox/bin/`:
   em cima); S (host) chega via `/usr`. Evita copiar as células em cada árvore.
 - **Host contract** — `packbox-verify` verifica que o host fornece os símbolos
   requeridos (ABI).
-- **Assinaturas e remoto** — `packbox-sign` (ed25519) assina o `.pbox`;
-  `packbox-fetch` publica e baixa apenas o delta (chunks + células).
+- **Assinaturas e remoto** — `packbox-sign` (ed25519) assina o `.pbox` e o **índice do repositório**;
+  `packbox-fetch` publica, **busca** (`search`) e instala por id, com **downloads concorrentes**.
 
 ### Como funciona a deduplicação
 
@@ -399,7 +399,7 @@ Total: 6 chunks únicos em vez de 9.
 ### v0.2 — Alcance
 
 - [ ] Binários pré-compilados x86_64 e aarch64 (página de releases)
-- [ ] Índice/repositório central assinado (`search`/`install` a partir de remoto)
+- [x] Índice/repositório central assinado (`search`/`install` a partir de remoto)
 - [ ] Frontend GUI opcional (GTK4)
 
 ### Futuro
