@@ -23,7 +23,7 @@ type Config struct {
 // DefaultConfig returns the default CDC parameters.
 // DefaultConfig devuelve los parámetros CDC por defecto.
 func DefaultConfig() Config {
-	return Config{Min: 64 << 10, Avg: 256 << 10, Max: 1 << 20}
+	return Config{Min: 32 << 10, Avg: 128 << 10, Max: 1 << 20}
 }
 
 // gear is a fixed deterministic table of 64-bit values (splitmix64).

@@ -11,7 +11,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/packbox/packbox/internal/cas"
 	"github.com/packbox/packbox/internal/manifest"
@@ -122,6 +124,8 @@ func (r *Result) add(reused bool, size int64) {
 func Fetch(store *cas.Store, src *Source, m *manifest.Manifest) (Result, error) {
 	var r Result
 	seen := map[string]bool{}
+	var missing []string
+
 	for _, fi := range m.Layers.App.Files {
 		for _, h := range fi.Chunks {
 			if seen[h] {
@@ -132,16 +136,72 @@ func Fetch(store *cas.Store, src *Source, m *manifest.Manifest) (Result, error) 
 				r.add(true, sz)
 				continue
 			}
-			data, err := src.Chunk(h)
-			if err != nil {
-				return r, err
-			}
-			if _, err := store.StoreBytes(data); err != nil {
-				return r, err
-			}
-			r.add(false, int64(len(data)))
+			missing = append(missing, h)
 		}
 	}
+
+	if len(missing) == 0 {
+		return r, nil
+	}
+
+	// Parallel download using worker pool.
+	numWorkers := runtime.NumCPU() * 2
+	jobs := make(chan string, len(missing))
+	results := make(chan Result, len(missing))
+	errChan := make(chan error, 1)
+	var wg sync.WaitGroup
+
+	for w := 0; w < numWorkers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for h := range jobs {
+				data, err := src.Chunk(h)
+				if err != nil {
+					select {
+					case errChan <- err:
+					default:
+					}
+					return
+				}
+				if _, err := store.StoreBytes(data); err != nil {
+					select {
+					case errChan <- err:
+					default:
+					}
+					return
+				}
+				results <- Result{
+					Total:           1,
+					Downloaded:      1,
+					DownloadedBytes: int64(len(data)),
+				}
+			}
+		}()
+	}
+
+	for _, h := range missing {
+		jobs <- h
+	}
+	close(jobs)
+
+	go func() {
+		wg.Wait()
+		close(results)
+	}()
+
+	for res := range results {
+		r.Total += res.Total
+		r.Downloaded += res.Downloaded
+		r.DownloadedBytes += res.DownloadedBytes
+	}
+
+	select {
+	case err := <-errChan:
+		return r, err
+	default:
+	}
+
 	return r, nil
 }
 

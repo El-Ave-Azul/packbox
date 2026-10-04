@@ -52,7 +52,7 @@ type Sandbox struct {
 	Entrypoint   string
 	Args         []string
 	IsGUI        bool
-	Network      bool
+	Network      string // "none", "limited", "full"
 	DelegateLibs []string
 	// Layers are directories layed UNDER the app tree at /app (overlay lower
 	// layers, lowest first): the app tree (A) sits on top of them (C, e.g.
@@ -239,7 +239,7 @@ func (s *Sandbox) bwrapArgs() ([]string, func(), error) {
 	}
 	a = append(a, s.appMount()...)
 
-	if s.Network {
+	if s.Network == "full" || s.Network == "limited" {
 		a = append(a, "--share-net")
 	}
 	for _, d := range []string{"/lib", "/lib64", "/bin", "/sbin", "/var"} {
@@ -277,6 +277,29 @@ func (s *Sandbox) bwrapArgs() ([]string, func(), error) {
 	} {
 		if v := os.Getenv(k); v != "" {
 			a = append(a, "--setenv", k, v)
+		}
+	}
+
+	// Network Proxy: if the sandbox was granted a net-proxy, set environment variables.
+	for _, cap := range s.Caps {
+		if strings.HasPrefix(cap, "net-proxy:") {
+			proxyAddr := strings.TrimPrefix(cap, "net-proxy:")
+			a = append(a, "--setenv", "http_proxy", proxyAddr)
+			a = append(a, "--setenv", "https_proxy", proxyAddr)
+			a = append(a, "--setenv", "HTTP_PROXY", proxyAddr)
+			a = append(a, "--setenv", "HTTPS_PROXY", proxyAddr)
+		} else if cap == "dbus:session" {
+			if rd := os.Getenv("XDG_RUNTIME_DIR"); rd != "" {
+				bp := filepath.Join(rd, "bus")
+				if _, err := os.Stat(bp); err == nil {
+					a = append(a, "--ro-bind", bp, bp)
+					a = append(a, "--setenv", "DBUS_SESSION_BUS_ADDRESS", "unix:path="+bp)
+				}
+			}
+		} else if cap == "dbus:system" {
+			if _, err := os.Stat("/run/dbus/system_bus_socket"); err == nil {
+				a = append(a, "--ro-bind", "/run/dbus/system_bus_socket", "/run/dbus/system_bus_socket")
+			}
 		}
 	}
 
@@ -341,6 +364,7 @@ func (s *Sandbox) useX11() bool {
 	if s.X11 {
 		return true
 	}
+	// Host is X11-only if Wayland is missing but DISPLAY is present.
 	return os.Getenv("WAYLAND_DISPLAY") == "" && os.Getenv("DISPLAY") != ""
 }
 
@@ -538,6 +562,18 @@ func (s *Sandbox) addGUISupport(args *[]string) {
 		*args = append(*args, "--setenv", "DBUS_SYSTEM_BUS_ADDRESS", "unix:path="+s.systemProxy)
 	} else if _, err := os.Stat("/run/dbus/system_bus_socket"); err == nil {
 		*args = append(*args, "--ro-bind", "/run/dbus/system_bus_socket", "/run/dbus/system_bus_socket")
+	}
+
+	// Audio: bind PipeWire/PulseAudio sockets and set environment.
+	// Audio: bindea sockets de PipeWire/PulseAudio y configura el entorno.
+	if rd := os.Getenv("XDG_RUNTIME_DIR"); rd != "" {
+		for _, s_socket := range []string{"pulse", "pipewire-0", "pipewire-0-manager"} {
+			p := filepath.Join(rd, s_socket)
+			if _, err := os.Stat(p); err == nil {
+				*args = append(*args, "--ro-bind", p, p)
+			}
+		}
+		*args = append(*args, "--setenv", "PULSE_SERVER", "unix:"+filepath.Join(rd, "pulse/native"))
 	}
 
 	// Opt-in VM capabilities (libvirt/KVM) — for apps like GNOME Boxes.

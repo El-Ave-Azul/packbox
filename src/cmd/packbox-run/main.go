@@ -10,6 +10,7 @@ import (
 
 	"github.com/packbox/packbox/internal/appinstall"
 	"github.com/packbox/packbox/internal/manifest"
+	"github.com/packbox/packbox/internal/netproxy"
 	"github.com/packbox/packbox/internal/sandbox"
 )
 
@@ -34,7 +35,7 @@ func main() {
 	fmt.Printf("[run] %s v%s\n", appID, m.Version)
 	sb := sandbox.NewSandbox(appDir, m.Entrypoint, args)
 	sb.IsGUI = m.GUI
-	sb.Network = m.Network
+	sb.Network = string(m.Network)
 	sb.X11 = m.X11
 	sb.Caps = m.Sandbox
 	sb.BusName = m.BusName
@@ -50,6 +51,19 @@ func main() {
 	}
 	sb.DelegateLibs = m.HostContract.Delegate
 	sb.Layers = appinstall.CellDirs(home, m.Mods)
+
+	// Network: if 'limited', start the internal proxy and configure environment.
+	if m.Network == manifest.NetworkLimited {
+		addr, err := netproxy.StartProxy()
+		if err != nil {
+			fmt.Printf("WARN: could not start network proxy: %v\n", err)
+		} else {
+			fmt.Printf("[net] limited mode: proxy started at %s\n", addr)
+			// We add the proxy as a capability so the sandbox can set the env vars.
+			sb.Caps = append(sb.Caps, "net-proxy:"+addr)
+		}
+	}
+
 	// Deja un log (también desde el menú, donde no hay terminal que ver).
 	// Leaves a log (also from the menu, where no terminal shows anything).
 	logPath := filepath.Join(home, ".cache/packbox", appID+".log")

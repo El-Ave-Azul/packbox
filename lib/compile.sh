@@ -7,8 +7,8 @@
 # Provee / Provides: compile_go, run_tests, configure_path
 # =============================================================================
 
-# Lista canónica de los 15 binarios.
-# Canonical list of the 15 binaries.
+# Lista canónica de los 16 binarios.
+# Canonical list of the 16 binaries.
 _PB_BINS=(
     packbox-pack
     packbox-install
@@ -25,6 +25,7 @@ _PB_BINS=(
     packbox-sign
     packbox-fetch
     packbox-debug
+    packbox-gui
 )
 
 # ─── Variables de entorno de Go ─────────────────────────────────────────────
@@ -34,7 +35,8 @@ _go_env() {
     export GOPATH="$PACKBOX_GO_PATH"
     export PATH="$PACKBOX_GO_BIN:$GOPATH/bin:$PATH"
     export GOFLAGS="${GOFLAGS:-}"
-    export CGO_ENABLED="${CGO_ENABLED:-0}"
+    export GOPROXY="https://proxy.golang.org"
+    export CGO_ENABLED=1
 }
 
 # ─── Compilación ─────────────────────────────────────────────────────────────
@@ -76,7 +78,7 @@ compile_go() {
     for b in "${_PB_BINS[@]}"; do
         i=$((i + 1))
         progress "$i" "$n" "$b"
-        if ! go build -o "$PACKBOX_BIN_DIR/$b" "./cmd/$b" 2>&1; then
+        if ! go build -v -o "$PACKBOX_BIN_DIR/$b" "./cmd/$b" 2>&1; then
             echo ""
             echo -e "  ${R}Compilation error in / Error de compilación en $b:${N}"
             echo ""

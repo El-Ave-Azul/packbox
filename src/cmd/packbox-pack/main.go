@@ -58,6 +58,9 @@ func pre() (string, []string) {
 			}
 		} else if dir == "" {
 			dir = a[i]
+		} else {
+			// BUG FIX: Report unused positional arguments (like the .pb file)
+			fmt.Printf("WARN: unused argument ignored: %s\\n", a[i])
 		}
 	}
 	return dir, flags
@@ -78,7 +81,7 @@ func main() {
 	categories := flag.String("categories", "", "")
 	sbCaps := flag.String("sandbox", "", "")
 	busName := flag.String("dbus-name", "", "")
-	network := flag.Bool("network", false, "")
+	network := flag.String("network", "none", "network policy ('none', 'limited', 'full')")
 	x11 := flag.Bool("x11", false, "")
 	noDebug := flag.Bool("no-debug", false, "")
 	flag.Parse()
@@ -245,7 +248,7 @@ func main() {
 	}
 
 	appM := &manifest.Manifest{
-		SchemaVersion: "1.6",
+		SchemaVersion: "1.7",
 		Name:          *name,
 		Version:       *ver,
 		Description:   *desc,
@@ -257,7 +260,7 @@ func main() {
 		Categories:    *categories,
 		Sandbox:       splitList(*sbCaps),
 		BusName:       *busName,
-		Network:       *network,
+		Network:       manifest.NetworkMode(*network),
 		X11:           *x11,
 		Layers:        manifest.Layers{App: manifest.AppLayer{Files: files}},
 		Mods:          mlist,

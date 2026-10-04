@@ -13,18 +13,22 @@ import (
 // Manifest describes an app bundle.
 // Manifest describe un bundle de aplicación.
 type Manifest struct {
-	SchemaVersion string `json:"schema_version"`
-	Name          string `json:"name"`
-	Version       string `json:"version"`
-	Description   string `json:"description,omitempty"`
-	Entrypoint    string `json:"entrypoint"`
-	Arch          string `json:"arch"`
-	GUI           bool   `json:"gui,omitempty"`
-	Toolkit       string `json:"toolkit,omitempty"`
-	Icon          string `json:"icon,omitempty"`
-	Categories    string `json:"categories,omitempty"`
-	Network       bool   `json:"network,omitempty"`
-	X11           bool   `json:"x11,omitempty"`
+	SchemaVersion string      `json:"schema_version"`
+	Name          string      `json:"name"`
+	Version       string      `json:"version"`
+	Description   string      `json:"description,omitempty"`
+	Developer     string      `json:"developer,omitempty"`
+	Website       string      `json:"website,omitempty"`
+	License       string      `json:"license,omitempty"`
+	Support       string      `json:"support,omitempty"`
+	Entrypoint    string      `json:"entrypoint"`
+	Arch          string      `json:"arch"`
+	GUI           bool        `json:"gui,omitempty"`
+	Toolkit       string      `json:"toolkit,omitempty"`
+	Icon          string      `json:"icon,omitempty"`
+	Categories    string      `json:"categories,omitempty"`
+	Network       NetworkMode `json:"network,omitempty"` // "none", "limited", "full"
+	X11           bool        `json:"x11,omitempty"`
 	// Sandbox lists extra host capabilities to grant (opt-in), e.g.
 	// "system-bus", "libvirt", "kvm" for VM apps like GNOME Boxes.
 	// Sandbox lista capacidades extra del host a conceder (opt-in), p. ej.
@@ -41,6 +45,51 @@ type Manifest struct {
 	HostContract HostContract `json:"host_contract"`
 	Portable     bool         `json:"portable,omitempty"`
 	Debug        *DebugInfo   `json:"debug,omitempty"`
+}
+
+// NetworkMode is the app's network policy. It unmarshals from either the
+// modern string form ("none"/"limited"/"full") or the legacy boolean form
+// (true = full, false = none), so manifests written before schema 1.7 still
+// load instead of failing with a type error.
+// NetworkMode es la política de red de la app. Se deserializa tanto de la forma
+// moderna (string "none"/"limited"/"full") como de la forma booleana antigua
+// (true = full, false = none), para que los manifiestos previos al esquema 1.7
+// sigan cargando en vez de fallar con un error de tipo.
+type NetworkMode string
+
+const (
+	NetworkNone    NetworkMode = "none"
+	NetworkLimited NetworkMode = "limited"
+	NetworkFull    NetworkMode = "full"
+)
+
+// UnmarshalJSON accepts a JSON string, bool, or null.
+// UnmarshalJSON acepta un string, bool o null de JSON.
+func (n *NetworkMode) UnmarshalJSON(b []byte) error {
+	s := strings.TrimSpace(string(b))
+	switch s {
+	case "", "null":
+		*n = ""
+		return nil
+	case "true":
+		*n = NetworkFull
+		return nil
+	case "false":
+		*n = NetworkNone
+		return nil
+	}
+	var str string
+	if err := json.Unmarshal(b, &str); err != nil {
+		return fmt.Errorf("network: %w", err)
+	}
+	*n = NetworkMode(str)
+	return nil
+}
+
+// MarshalJSON always writes the modern string form.
+// MarshalJSON siempre escribe la forma moderna de string.
+func (n NetworkMode) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(n))
 }
 
 // DebugInfo points at the debug-symbol cell split out of the app's binary (so
@@ -96,7 +145,7 @@ func Load(p string) (*Manifest, error) {
 	if m.SchemaVersion == "" || m.Name == "" || m.Entrypoint == "" {
 		return nil, fmt.Errorf("missing fields")
 	}
-	if m.SchemaVersion != "1.5" && m.SchemaVersion != "1.6" {
+	if m.SchemaVersion != "1.5" && m.SchemaVersion != "1.6" && m.SchemaVersion != "1.7" {
 		return nil, fmt.Errorf("unsupported schema: %s", m.SchemaVersion)
 	}
 	// The name becomes a directory and the file keys become paths: reject

@@ -81,8 +81,14 @@ install_pkgs() {
 # default_deps — prints the list of packages we need.
 default_deps() {
     case "$DF" in
-        debian|fedora|arch|suse)
-            echo "bubblewrap binutils jq bc curl tar" ;;
+        debian)
+            echo "bubblewrap binutils jq bc curl tar libgtk-4-dev" ;;
+        fedora)
+            echo "bubblewrap binutils jq bc curl tar gtk4-devel" ;;
+        arch)
+            echo "bubblewrap binutils jq bc curl tar gtk4" ;;
+        suse)
+            echo "bubblewrap binutils jq bc curl tar gtk4-devel" ;;
         *)
             echo "bubblewrap curl tar" ;;
     esac

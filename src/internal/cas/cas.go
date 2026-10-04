@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/packbox/packbox/internal/chunker"
 	"github.com/packbox/packbox/internal/security"
@@ -129,10 +130,18 @@ func (s *Store) StoreBytes(data []byte) (string, error) {
 			os.Remove(tmpName)
 		}
 	}()
+
+	// Chunks are stored raw: the store is the on-disk dedup layer, so install
+	// hardlinks a chunk straight into the app tree (no copy, no recompress).
+	// Compression lives in the .pbox export, not here.
+	// Los chunks se guardan crudos: el almacén es la capa de dedup en disco, así
+	// la instalación hardlinkea el chunk directo al árbol de la app (sin copia
+	// ni recompresión). La compresión vive en el export .pbox, no aquí.
 	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()
 		return "", err
 	}
+
 	if err := tmp.Close(); err != nil {
 		return "", err
 	}
@@ -197,6 +206,10 @@ func (s *Store) Materialize(chunks []string, dst string, mode os.FileMode) error
 		if !isValidHash(h) {
 			return fmt.Errorf("invalid hash: %q", h)
 		}
+		// Update access time to support LRU GC.
+		// Actualiza el tiempo de acceso para soportar el GC LRU.
+		src := filepath.Join(s.RootPath, h[:2], h)
+		_ = os.Chtimes(src, time.Now(), time.Now())
 	}
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
@@ -212,6 +225,7 @@ func (s *Store) Materialize(chunks []string, dst string, mode os.FileMode) error
 			f.Close()
 			return err
 		}
+
 		if _, err := io.Copy(f, in); err != nil {
 			in.Close()
 			f.Close()
@@ -372,6 +386,14 @@ func (s *Store) RemoveReference(h, app string) error {
 // GarbageCollect removes chunks with no refs and returns count + bytes freed.
 // GarbageCollect elimina chunks sin refs y devuelve cantidad + bytes liberados.
 func (s *Store) GarbageCollect() (int, int64, error) {
+	return s.GarbageCollectLRU(0)
+}
+
+// GarbageCollectLRU removes chunks with no refs, and optionally chunks not
+// accessed in the last N days.
+// GarbageCollectLRU elimina chunks sin refs, y opcionalmente chunks no
+// accedidos en los últimos N días.
+func (s *Store) GarbageCollectLRU(days int) (int, int64, error) {
 	del := 0
 	var freed int64
 	entries, err := os.ReadDir(s.RootPath)
@@ -400,24 +422,33 @@ func (s *Store) GarbageCollect() (int, int64, error) {
 			if strings.Contains(fn, ".tmp-") {
 				continue
 			}
-			rp := filepath.Join(pd, fn+".refs")
 			cp := filepath.Join(pd, fn)
+			rp := filepath.Join(pd, fn+".refs")
+
+			shouldDelete := false
 			if _, err := os.Stat(rp); os.IsNotExist(err) {
+				shouldDelete = true
+			} else {
+				data, _ := os.ReadFile(rp)
+				if len(data) == 0 {
+					shouldDelete = true
+				} else if days > 0 {
+					// Check access time.
+					if fi, err := f.Info(); err == nil {
+						if time.Since(fi.ModTime()).Hours() > float64(days*24) {
+							shouldDelete = true
+						}
+					}
+				}
+			}
+
+			if shouldDelete {
 				if fi, err := f.Info(); err == nil {
 					freed += fi.Size()
 				}
 				_ = os.Remove(cp)
+				_ = os.Remove(rp)
 				del++
-			} else {
-				data, _ := os.ReadFile(rp)
-				if len(data) == 0 {
-					if fi, err := f.Info(); err == nil {
-						freed += fi.Size()
-					}
-					_ = os.Remove(cp)
-					_ = os.Remove(rp)
-					del++
-				}
 			}
 		}
 	}

@@ -87,7 +87,7 @@ func tags(m *manifest.Manifest) string {
 		}
 		s += "]"
 	}
-	if m.Network {
+	if m.Network != "none" && m.Network != "" {
 		s += " [NET]"
 	}
 	return s

@@ -1,3 +1,8 @@
 /.worktrees/
 /.itest/
 .~lock.*#
+
+# Artefactos de compilación / Build artifacts
+/bin/
+/packbox-run
+/.stress_test/

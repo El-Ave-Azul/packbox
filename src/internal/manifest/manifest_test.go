@@ -65,6 +65,36 @@ func TestLoadRejectsTraversalFilePath(t *testing.T) {
 	}
 }
 
+func TestNetworkModeCompat(t *testing.T) {
+	dir := t.TempDir()
+	cases := []struct {
+		body string
+		want NetworkMode
+	}{
+		// Legacy schema 1.5/1.6 wrote network as a boolean.
+		{`{"schema_version":"1.6","name":"ok","entrypoint":"/app/x","network":true}`, NetworkFull},
+		{`{"schema_version":"1.6","name":"ok","entrypoint":"/app/x","network":false}`, NetworkNone},
+		// Schema 1.7 uses the string form.
+		{`{"schema_version":"1.7","name":"ok","entrypoint":"/app/x","network":"limited"}`, NetworkLimited},
+		{`{"schema_version":"1.7","name":"ok","entrypoint":"/app/x","network":"none"}`, NetworkNone},
+		// Absent stays empty.
+		{`{"schema_version":"1.7","name":"ok","entrypoint":"/app/x"}`, ""},
+	}
+	for i, c := range cases {
+		p := filepath.Join(dir, "m.json")
+		if err := os.WriteFile(p, []byte(c.body), 0644); err != nil {
+			t.Fatal(err)
+		}
+		m, err := Load(p)
+		if err != nil {
+			t.Fatalf("case %d: %v", i, err)
+		}
+		if m.Network != c.want {
+			t.Fatalf("case %d: Network = %q, want %q", i, m.Network, c.want)
+		}
+	}
+}
+
 // jsonStr is a minimal JSON string encoder for the tests.
 // jsonStr es un codificador JSON de string mínimo para los tests.
 func jsonStr(s string) string {
