@@ -11,66 +11,105 @@
 # shared across apps and families (content-deduplicated).
 #
 # Asume / Assumes: ui.sh, paths.sh, common.sh, detect.sh, pack.sh
-# Provee / Provides: flatpak_applications, flatpak_import
+# Provee / Provides: flatpak_roots, flatpak_applications, flatpak_import, fp_version
 # =============================================================================
 
-FLATPAK_ROOT="${FLATPAK_ROOT:-/var/lib/flatpak}"
+# Instalaciones de Flatpak: sistema y usuario. FLATPAK_ROOT lo fuerza (tests).
+# Flatpak installs: system and user. FLATPAK_ROOT overrides (tests).
+FLATPAK_ROOT="${FLATPAK_ROOT:-}"
+
+# flatpak_roots — raíces de Flatpak existentes (sistema + usuario).
+# flatpak_roots — existing Flatpak roots (system + user).
+flatpak_roots() {
+    if [[ -n "$FLATPAK_ROOT" ]]; then
+        [[ -d "$FLATPAK_ROOT/app" ]] && printf '%s\n' "$FLATPAK_ROOT"
+        return 0
+    fi
+    local r
+    for r in /var/lib/flatpak "$HOME/.local/share/flatpak" "${XDG_DATA_HOME:-$HOME/.local/share}/flatpak"; do
+        [[ -d "$r/app" ]] && printf '%s\n' "$r"
+    done | sort -u
+}
 
 # _fp_pause — pausa solo con terminal: en un script (sin stdin) no debe colgarse.
 # _fp_pause — pauses only with a terminal: in a script (no stdin) it must not hang.
 _fp_pause() {
-    [[ -t 0 ]] && _fp_pause
+    [[ -t 0 ]] && read -rp "  ENTER..."
     return 0
 }
 
+# fp_version <app-id> — versión real si flatpak la reporta, si no "1.0".
+# fp_version <app-id> — real version if flatpak reports it, else "1.0".
+fp_version() {
+    local id="$1" v=""
+    if command -v flatpak >/dev/null 2>&1; then
+        v=$(flatpak info "$id" 2>/dev/null | awk -F': *' '/^[[:space:]]*Version:/{print $2; exit}')
+    fi
+    printf '%s' "${v:-1.0}"
+}
 
-# flatpak_applications — ids de las apps instaladas con Flatpak.
-# flatpak_applications — ids of the apps installed with Flatpak.
+
+# flatpak_applications — ids de las apps instaladas con Flatpak (sistema + usuario).
+# flatpak_applications — ids of the installed Flatpak apps (system + user).
 flatpak_applications() {
-    local d
-    for d in "$FLATPAK_ROOT"/app/*/; do
-        [[ -d "$d" ]] || continue
-        basename "$d"
-    done | sort
+    local root d
+    while IFS= read -r root; do
+        for d in "$root"/app/*/; do
+            [[ -d "$d" ]] || continue
+            basename "$d"
+        done
+    done < <(flatpak_roots) | sort -u
 }
 
 # flatpak_deploy <app-id> — directorio del deployment activo (o el único).
 # flatpak_deploy <app-id> — directory of the active deployment (or the only one).
 flatpak_deploy() {
-    local base="$FLATPAK_ROOT/app/$1" a d
-    [[ -d "$base" ]] || return 1
-    for a in "$base"/*/; do
-        [[ -d "$a" ]] || continue
-        for d in "$a"/*/; do
-            [[ -d "$d/files" ]] || continue
-            if [[ -e "$d/active" ]]; then
-                readlink -f "$d/active"
-            else
-                echo "${d%/}"
-            fi
-            return 0
+    local id="$1" root base a br d
+    while IFS= read -r root; do
+        base="$root/app/$id"
+        [[ -d "$base" ]] || continue
+        for a in "$base"/*/; do          # <arch>/
+            [[ -d "$a" ]] || continue
+            for br in "$a"/*/; do        # <branch>/
+                [[ -d "$br" ]] || continue
+                # <branch>/active → commit activo (el deployment activo).
+                # <branch>/active → active commit (the active deployment).
+                if [[ -e "$br/active" ]]; then
+                    readlink -f "$br/active"
+                    return 0
+                fi
+                for d in "$br"/*/; do    # <commit>/
+                    [[ -d "$d/files" ]] || continue
+                    echo "${d%/}"
+                    return 0
+                done
+            done
         done
-    done
+    done < <(flatpak_roots)
     return 1
 }
 
 # flatpak_runtime_dir <ref "org.gnome.Platform/x86_64/46"> — su deployment.
 # flatpak_runtime_dir <ref> — its deployment.
 flatpak_runtime_dir() {
-    local ref="$1" id arch br base d
+    local ref="$1" root id arch br base d
     IFS=/ read -r id arch br <<< "$ref"
     [[ -n "$id" && -n "$arch" && -n "$br" ]] || return 1
-    base="$FLATPAK_ROOT/runtime/$id/$arch/$br"
-    [[ -d "$base" ]] || return 1
-    for d in "$base"/*/; do
-        [[ -d "$d/files" ]] || continue
-        if [[ -e "$d/active" ]]; then
-            readlink -f "$d/active"
-        else
-            echo "${d%/}"
+    while IFS= read -r root; do
+        base="$root/runtime/$id/$arch/$br"
+        [[ -d "$base" ]] || continue
+        # Preferir el commit activo (<branch>/active); si no, el primero.
+        # Prefer the active commit (<branch>/active); otherwise the first one.
+        if [[ -e "$base/active" ]]; then
+            readlink -f "$base/active"
+            return 0
         fi
-        return 0
-    done
+        for d in "$base"/*/; do
+            [[ -d "$d/files" ]] || continue
+            echo "${d%/}"
+            return 0
+        done
+    done < <(flatpak_roots)
     return 1
 }
 
@@ -86,7 +125,7 @@ flatpak_import() {
     local want="${1:-}" id dep rt cmd
     hdr "$(_tt L_FP_TITLE "Importar una app de Flatpak")"
 
-    if [[ ! -d "$FLATPAK_ROOT/app" ]]; then
+    if [[ -z "$(flatpak_roots | head -1)" ]]; then
         warn "$(_tt L_FP_NONE "Flatpak no está instalado (o no hay apps instaladas)")"
         _fp_pause
         return 1
@@ -125,7 +164,7 @@ flatpak_import() {
     rt=$(flatpak_meta "$dep" runtime)
 
     echo ""
-    det "app:     ${dep#"$FLATPAK_ROOT"/}"
+    det "app:     ${dep#"${dep%%/app/*}"/}"
     det "command: $cmd"
     det "runtime: ${rt:--}"
     if [[ -z "$cmd" || ! -x "$dep/files/bin/$cmd" ]]; then
@@ -147,7 +186,7 @@ current_from_flatpak() {
     local sockets shared rtdir df
 
     CURRENT_APP_ID="$id"
-    CURRENT_VERSION="1.0"
+    CURRENT_VERSION="$(fp_version "$id")"
     CURRENT_DESC="$id"
     CURRENT_IS_GUI="GUI"
     CURRENT_TOOLKIT=""
