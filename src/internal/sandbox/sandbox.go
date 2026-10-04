@@ -233,7 +233,11 @@ func (s *Sandbox) bwrapArgs() ([]string, func(), error) {
 		"--cap-drop", "ALL",
 		"--die-with-parent", "--new-session",
 		"--clearenv",
-		"--setenv", "PATH", "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin",
+		// PATH incluye /app/bin (convención de Flatpak): los wrappers internos de
+		// las apps hacen `exec <bin>` sin ruta y esperan encontrarlo en el PATH.
+		// PATH includes /app/bin (Flatpak convention): apps' internal wrappers do
+		// `exec <bin>` with no path and expect it on PATH.
+		"--setenv", "PATH", "/app/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin",
 		"--setenv", "SHELL", "/bin/bash",
 		"--setenv", "TERM", "xterm-256color",
 	}

@@ -133,6 +133,11 @@ APP_DIR="\$(dirname "\$SCRIPT_DIR")"
 [[ -d "\$APP_DIR/lib" ]] && export LD_LIBRARY_PATH="\$APP_DIR/lib:\${LD_LIBRARY_PATH:-}"
 [[ -d "\$APP_DIR/bundle" ]] && export LD_LIBRARY_PATH="\$APP_DIR/bundle:\$APP_DIR/bundle/lib:\${LD_LIBRARY_PATH:-}"
 [[ -d "\$APP_DIR/share" ]] && export XDG_DATA_DIRS="\${XDG_DATA_DIRS:-/usr/local/share:/usr/share}:\$APP_DIR/share"
+# La app espera su bin/ en el PATH (Flatpak pone /app/bin): sin esto, un wrapper
+# que hace \`exec <bin>\` sin ruta falla con 127.
+# The app expects its bin/ on PATH (Flatpak sets /app/bin): without this, a
+# wrapper doing \`exec <bin>\` with no path fails with 127.
+[[ -d "\$APP_DIR/bin" ]] && export PATH="\$APP_DIR/bin:\${PATH:-/usr/bin:/bin}"
 exec "\$SCRIPT_DIR/$bn" "\$@"
 LAUNCHER_EOF
     chmod +x "$dest"
