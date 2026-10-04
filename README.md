@@ -238,7 +238,7 @@ Packbox v0.3.0 incluye **15 binarios Go** en `~/.packbox/bin/`:
 - **Aislamiento de datos por app** — Cada app corre con su **HOME privado**; solo se exponen fuentes/temas en **solo lectura**.
 - **D-Bus filtrado** — `xdg-dbus-proxy` con lista blanca (portales + `dconf`).
 - **seccomp** — Filtro por defecto que bloquea superficie peligrosa del kernel.
-- **Red Granular** — Soporta modo `limited` que bloquea el acceso a la red local (RFC 1918) mediante un proxy interno.
+- **Red Granular** — Modos `none`/`limited`/`full`. `limited` usa un proxy interno **best-effort** que bloquea rangos privados/reservados; solo afecta a apps que respetan `http_proxy`/`https_proxy` (los sockets crudos no se filtran).
 - **Soporte Multimedia Seguro** — Acceso mediada a audio y cámara vía portales.
 - **Anti tar-slip / traversal** — Validación estricta de rutas en `.pbox`.
 - **Limpieza de entorno** — `--clearenv` + whitelist explícita.

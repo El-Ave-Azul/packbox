@@ -58,7 +58,8 @@ func main() {
 		if err != nil {
 			fmt.Printf("WARN: could not start network proxy: %v\n", err)
 		} else {
-			fmt.Printf("[net] limited mode: proxy started at %s\n", addr)
+			fmt.Printf("[net] limited mode: proxy at %s\n", addr)
+			fmt.Printf("[net] best-effort: only apps honoring http_proxy/https_proxy are restricted\n")
 			// We add the proxy as a capability so the sandbox can set the env vars.
 			sb.Caps = append(sb.Caps, "net-proxy:"+addr)
 		}

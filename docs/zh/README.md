@@ -227,7 +227,7 @@ Packbox v0.3.0 在 `~/.packbox/bin/` 中包含 **15 个 Go 二进制文件**：
 - **按应用隔离数据** — 每个应用以**私有 HOME** 运行；仅以**只读**方式公开字体/主题。
 - **过滤的 D-Bus** — `xdg-dbus-proxy` 配合白名单（portals + `dconf`）。
 - **seccomp** — 默认过滤器，拦截危险的内核表面。
-- **细粒度网络** — 支持 `limited` 模式，通过内部代理拦截本地网络访问 (RFC 1918)。
+- **细粒度网络** — `none`/`limited`/`full` 模式。`limited` 使用内部 **best-effort** 代理，拦截私有/保留网段；它只影响遵循 `http_proxy`/`https_proxy` 的应用（原始套接字不会被过滤）。
 - **安全多媒体支持** — 通过 portals 实现对音频和摄像头的中介访问。
 - **防 tar-slip / 路径穿越** — 对 `.pbox` 路径进行严格校验。
 - **环境清理** — `--clearenv` + 显式白名单。

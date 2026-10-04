@@ -42,3 +42,5 @@ jobs:
         run: shellcheck -S warning lib/*.sh packbox-install.sh packbox-packager.sh tests/*.sh
       - name: end-to-end (tests/integration.sh)
         run: bash tests/integration.sh
+      - name: schema + network matrix (tests/matrix.sh)
+        run: bash tests/matrix.sh

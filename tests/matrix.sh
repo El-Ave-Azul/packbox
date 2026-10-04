@@ -91,5 +91,31 @@ else
     fail "Network was NOT enabled for 'full' policy: $out"
 fi
 
+# 6. Test Network Isolation: "limited" (proxy filters private, allows public).
+step "Test: Network Isolation (LIMITED)"
+net_lim_work="$WORK/net_limited"
+mkdir -p "$net_lim_work/bin"
+cat > "$net_lim_work/bin/net_lim" <<'SH'
+#!/bin/sh
+# The limited proxy must answer 403 (blocked) for a private host, and let a
+# public host through (any real HTTP code, not 000 = no connection).
+c=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 https://example.com)
+[ "$c" != "000" ] && [ -n "$c" ] && echo "PUBLIC_OK"
+p=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 http://192.168.1.1)
+[ "$p" = "403" ] && echo "PRIVATE_BLOCKED_BY_PROXY"
+SH
+chmod +x "$net_lim_work/bin/net_lim"
+
+"$BIN/packbox-pack" --name=matrix.net.limited --version=1.0 --entrypoint="/app/bin/net_lim" \
+    --network=limited "$net_lim_work" >/dev/null
+
+"$BIN/packbox-install" "$net_lim_work/manifest.json" >/dev/null 2>&1
+out=$("$BIN/packbox-run" matrix.net.limited 2>&1 || true)
+if echo "$out" | grep -q "PUBLIC_OK" && echo "$out" | grep -q "PRIVATE_BLOCKED_BY_PROXY"; then
+    pass "Network limited: public allowed, private blocked by the proxy"
+else
+    fail "Network limited behaved wrong: $out"
+fi
+
 rm -rf "$WORK"
 printf '\n\033[32m== MATRIX TESTS: ALL GREEN ==\033[0m\n'
