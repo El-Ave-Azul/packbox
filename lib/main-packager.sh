@@ -218,17 +218,22 @@ run_update() {
     hdr "$(_tt L_9_UPDATE "Actualizar una app")"
     local aid
     aid=$(pick_app) || { read -rp "  ENTER..."; return 1; }
-    echo -en "  ${BD}$(_tt L_MANIFEST "manifiesto (.json)"): ${N}"
+    echo -en "  ${BD}$(_tt L_UPDATE_SRC "manifiesto (.json) o URL del remoto"): ${N}"
     local mf
     read -r mf
     mf="${mf/#\~/$HOME}"
-    if [[ -z "$mf" || ! -f "$mf" ]]; then
+    local -a src
+    if [[ "$mf" =~ ^https?:// ]]; then
+        src=(--from "$mf")      # baja el manifiesto y el delta del remoto
+    elif [[ -n "$mf" && -f "$mf" ]]; then
+        src=("$mf")
+    else
         warn "$(t L_DOES_NOT_EXIST)"
         read -rp "  ENTER..."
         return 1
     fi
     echo ""
-    "$PACKBOX_BIN_UPDATE" "$aid" "$mf"
+    "$PACKBOX_BIN_UPDATE" "$aid" "${src[@]}"
     read -rp "  ENTER..."
 }
 

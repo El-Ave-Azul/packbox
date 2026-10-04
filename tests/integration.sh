@@ -152,6 +152,36 @@ out="$("$BIN/packbox-run" demo 2>&1 || true)"
 echo "$out" | grep -q LIBS_OK || fail "run (signed) did not see the lib: $out"
 pass "signature chain OK (verify + tamper refused + import + run)"
 
+step "update: local aborts without the chunks; --from fetches the delta"
+# Build v2 in a SEPARATE home so its chunks are not in this store.
+# Crea la v2 en un HOME aparte para que sus chunks no estén en este store.
+H2="$WORK/home2"; mkdir -p "$H2/.config/packbox/lang" "$H2/.local/share/packbox"
+echo en > "$H2/.config/packbox/lang/current"
+aw2="$WORK/appwork2"; mkdir -p "$aw2/bin"
+printf '#!/bin/sh\necho V2\n' > "$aw2/bin/app"; chmod +x "$aw2/bin/app"
+HOME="$H2" "$BIN/packbox-pack" --name demo --version 2.0 --entrypoint /app/bin/app "$aw2" >/dev/null
+HOME="$H2" "$BIN/packbox-install" "$aw2/manifest.json" >/dev/null
+
+# Without --from the v2 chunks are missing here → must abort.
+# Sin --from faltan los chunks de la v2 aquí → debe abortar.
+if HOME="$HOME_DIR" "$BIN/packbox-update" demo "$aw2/manifest.json" >/dev/null 2>&1; then
+    fail "update without --from should abort when the chunks are missing"
+fi
+pass "local update aborts when the new chunks are not in the store"
+
+# Publish v2 from H2, serve it, and update via --from (downloads the delta).
+# Publica la v2 desde H2, la sirve, y actualiza con --from (baja el delta).
+HOME="$H2" "$BIN/packbox-fetch" publish demo "$WORK/repo" >/dev/null
+PORT=$(python3 -c 'import socket;s=socket.socket();s.bind(("127.0.0.1",0));print(s.getsockname()[1]);s.close()')
+python3 -m http.server "$PORT" --directory "$WORK/repo" >/dev/null 2>&1 &
+httpd=$!
+sleep 1
+HOME="$HOME_DIR" "$BIN/packbox-update" demo --from "http://127.0.0.1:$PORT" >"$WORK/update.log" 2>&1
+kill "$httpd" 2>/dev/null || true
+grep -q 'updated to v2.0' "$WORK/update.log" || fail "update --from did not apply v2: $(cat "$WORK/update.log")"
+grep -q '"version": "2.0"' "$APPS/demo/manifest.json" || fail "installed manifest is not v2"
+pass "update --from downloaded the delta and applied v2"
+
 step "import menu picks an export by number (no path typing)"
 rm -rf "$APPS/demo"
 menu=$( { echo 5; echo 1; for _ in 1 2 3; do echo; done; echo 0; } \

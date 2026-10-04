@@ -174,6 +174,9 @@ packbox-gc
 
 # Update an installed app reusing chunks from the store
 packbox-update org.example.myapp ./new/manifest.json
+
+# ...or fetch only the delta from a remote (the missing chunks)
+packbox-update org.example.myapp --from https://repo.example/my-app
 ```
 
 ---
@@ -193,7 +196,7 @@ Packbox v0.3.0 includes **15 Go binaries** in `~/.packbox/bin/`:
 | `packbox-verify`   | Checks resolvable libs + **ABI compatibility** of the host         |
 | `packbox-export`   | Exports to `.pbox` with **adaptive compression** and optional `--sign` |
 | `packbox-import`   | Imports a `.pbox` (anti tar-slip, traversal and signatures)        |
-| `packbox-update`   | Updates an app reusing chunks + delta report (`--no-gc`)           |
+| `packbox-update`   | Updates an app reusing store chunks; `--from <url>` fetches the delta |
 | `packbox-module`   | Modules/cells: `list`, `create`, `cell <lib>...`                   |
 | `packbox-sign`     | ed25519 keys and signatures: `keygen`, `sign`, `verify`, `trust`   |
 | `packbox-fetch`    | HTTP remote: `publish`, `index`/`search`/`install` with a **signed index**, and `fetch` (concurrent delta) |

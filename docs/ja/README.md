@@ -171,6 +171,9 @@ packbox-gc
 
 # ストアのチャンクを再利用してインストール済みアプリを更新する
 packbox-update org.ejemplo.miapp ./nuevo/manifest.json
+
+# ...またはリモートから差分（不足しているチャンク）だけを取得する
+packbox-update org.ejemplo.miapp --from https://repo.ejemplo/mi-app
 ```
 
 ---
@@ -190,7 +193,7 @@ Packbox v0.3.0 には `~/.packbox/bin/` に **15 個の Go バイナリ** が含
 | `packbox-verify`   | 解決可能な lib + ホストの **ABI 互換性** を確認する |
 | `packbox-export`   | **適応型圧縮** と省略可能な `--sign` で `.pbox` にエクスポートする |
 | `packbox-import`   | `.pbox` をインポートする（anti tar-slip、traversal、署名）        |
-| `packbox-update`   | チャンクを再利用してアプリを更新する + デルタレポート (`--no-gc`)   |
+| `packbox-update`   | ストアのチャンクを再利用してアプリを更新する; `--from <url>` はデルタを取得する |
 | `packbox-module`   | モジュール/セル: `list`、`create`、`cell <lib>...`                   |
 | `packbox-sign`     | ed25519 のキーと署名: `keygen`、`sign`, `verify`, `trust`       |
 | `packbox-fetch`    | HTTP リモート: `publish`、**署名付きインデックス**を使う `index`/`search`/`install`、そして `fetch` (並行デルタ) |

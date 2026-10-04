@@ -161,6 +161,9 @@ packbox-gc
 
 # 저장소의 청크를 재사용하여 설치된 앱 업데이트
 packbox-update org.ejemplo.miapp ./nuevo/manifest.json
+
+# ...또는 원격에서 델타(누락된 청크)만 가져오기
+packbox-update org.ejemplo.miapp --from https://repo.ejemplo/mi-app
 ```
 
 ---
@@ -180,7 +183,7 @@ Packbox v0.3.0은 `~/.packbox/bin/`에 **15개의 Go 바이너리** 를 포함�
 | `packbox-verify`   | 해석 가능한 라이브러리 + 호스트의 **ABI 호환성** 확인        |
 | `packbox-export`   | **적응형 압축** 과 선택적 `--sign`으로 `.pbox`로 내보내기 |
 | `packbox-import`   | `.pbox` 가져오기 (tar-slip, traversal 및 서명 방지)             |
-| `packbox-update`   | 청크를 재사용하여 앱 업데이트 + 델타 보고서 (`--no-gc`)   |
+| `packbox-update`   | 저장소의 청크를 재사용하여 앱 업데이트; `--from <url>`은 델타를 가져옴 |
 | `packbox-module`   | 모듈/셀: `list`, `create`, `cell <lib>...`                  |
 | `packbox-sign`     | ed25519 키 및 서명: `keygen`, `sign`, `verify`, `trust`       |
 | `packbox-fetch`    | HTTP 원격: `publish`, **서명된 인덱스**를 사용하는 `index`/`search`/`install`, 그리고 `fetch` (병렬 델타) |

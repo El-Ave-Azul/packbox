@@ -163,6 +163,9 @@ packbox-gc
 
 # 复用 store 中的块更新已安装的应用
 packbox-update org.ejemplo.miapp ./nuevo/manifest.json
+
+# ...或仅从远程获取增量（缺少的块）
+packbox-update org.ejemplo.miapp --from https://repo.ejemplo/mi-app
 ```
 
 ---
@@ -182,7 +185,7 @@ Packbox v0.3.0 在 `~/.packbox/bin/` 中包含 **15 个 Go 二进制文件**：
 | `packbox-verify`   | 检查可解析的库 + 宿主的 **ABI 兼容性**        |
 | `packbox-export`   | 导出为 `.pbox`，使用**自适应压缩**和可选的 `--sign` |
 | `packbox-import`   | 导入 `.pbox`（防 tar-slip、路径穿越和签名）             |
-| `packbox-update`   | 复用块更新应用 + 增量报告（`--no-gc`）   |
+| `packbox-update`   | 复用 store 块更新应用；`--from <url>` 获取增量 |
 | `packbox-module`   | 模块/单元：`list`、`create`、`cell <lib>...`                  |
 | `packbox-sign`     | ed25519 密钥与签名：`keygen`、`sign`, `verify`, `trust`       |
 | `packbox-fetch`    | HTTP 远程仓库：`publish`、使用**签名索引**的 `index`/`search`/`install`，以及 `fetch`（并发增量）      |
