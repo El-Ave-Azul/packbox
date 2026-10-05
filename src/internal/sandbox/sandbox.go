@@ -246,7 +246,13 @@ func (s *Sandbox) bwrapArgs() ([]string, func(), error) {
 	if s.Network == "full" || s.Network == "limited" {
 		a = append(a, "--share-net")
 	}
-	for _, d := range []string{"/lib", "/lib64", "/bin", "/sbin", "/var"} {
+	// Host /lib, /lib64, /bin, /sbin are read-only for the dynamic loader, the
+	// universal libs and the shell. /var stays OUT: its package DBs and logs leak
+	// system state and are not needed at runtime (apps use $HOME, /tmp and /run).
+	// /lib, /lib64, /bin, /sbin del host van en solo lectura para el loader, las
+	// libs universales y el shell. /var queda FUERA: su base de paquetes y logs
+	// filtran estado del sistema y no se usa en runtime ($HOME, /tmp y /run).
+	for _, d := range []string{"/lib", "/lib64", "/bin", "/sbin"} {
 		if _, err := os.Stat(d); err == nil {
 			a = append(a, "--ro-bind", d, d)
 		}
@@ -520,11 +526,13 @@ func (s *Sandbox) addGUISupport(args *[]string) {
 	if _, err := os.Stat("/dev/dri"); err == nil {
 		*args = append(*args, "--dev-bind", "/dev/dri", "/dev/dri")
 	}
-	if _, err := os.Stat("/dev/shm"); err == nil {
-		*args = append(*args, "--dev-bind", "/dev/shm", "/dev/shm")
-	} else {
-		*args = append(*args, "--tmpfs", "/dev/shm")
-	}
+	// Private /dev/shm (a tmpfs of its own, not the host's): removes the shared
+	// memory channel between the app and host processes. Wayland/GPU clients
+	// still work: they pass the buffer fd over the socket (SCM_RIGHTS).
+	// /dev/shm privado (un tmpfs propio, no el del host): elimina el canal de
+	// memoria compartida entre la app y procesos del host. Wayland/GPU siguen
+	// funcionando: pasan el fd del búfer por el socket (SCM_RIGHTS).
+	*args = append(*args, "--tmpfs", "/dev/shm")
 
 	if wd := os.Getenv("WAYLAND_DISPLAY"); wd != "" {
 		*args = append(*args, "--setenv", "WAYLAND_DISPLAY", wd)
