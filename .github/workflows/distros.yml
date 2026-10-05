@@ -82,7 +82,6 @@ jobs:
           ' 2>&1 | tee distro.log
           rc=${PIPESTATUS[0]}
           if [ "$rc" -ne 0 ]; then
-            echo "::error::distros failure on ${{ matrix.name }} (rc=$rc); last log lines:"
-            tail -30 distro.log | while IFS= read -r l; do printf '::error::%s\n' "$l"; done
+            printf '::error::distros failure on %s (rc=%s): %s\n' "${{ matrix.name }}" "$rc" "$(tail -25 distro.log | tr '\n' '|')"
           fi
           exit "$rc"
