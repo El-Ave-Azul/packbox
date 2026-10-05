@@ -134,6 +134,7 @@ kv() {
 # ─── Boxes / panels ──────────────────────────────────────────────────────────
 # panel_top [title] — borde superior; con título va incrustado en la línea.
 # panel_top [title] — top border; with a title it is embedded in the line.
+# shellcheck disable=SC2120  # panel_top IS called with a title (main-packager.sh)
 panel_top() {
     local title="${1:-}" inner=$((PB_W + 2))
     if [[ -z "$title" ]]; then
@@ -144,7 +145,7 @@ panel_top() {
     local text="─ ${title} " fill
     fill=$(( inner - ${#text} ))
     (( fill < 0 )) && fill=0
-    printf '  %s%s%s%s%s%s%s\n' "${C}${BD}" "$PB_BOX_TL" "$text" \
+    printf '  %s%s%s%s%s%s\n' "${C}${BD}" "$PB_BOX_TL" "$text" \
         "$(_pb_repeat "$fill" "$PB_BOX_H")" "$PB_BOX_TR" "${N}"
 }
 

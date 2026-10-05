@@ -25,32 +25,32 @@ jobs:
             deps: >-
               apt-get update -qq &&
               apt-get install -y -qq bubblewrap binutils jq file xz-utils zstd
-              findutils curl ca-certificates
+              findutils curl ca-certificates python3
             app: apt-get install -y -qq btop
           - name: Debian 12
             image: debian:12
             deps: >-
               apt-get update -qq &&
               apt-get install -y -qq bubblewrap binutils jq file xz-utils zstd
-              findutils curl ca-certificates
+              findutils curl ca-certificates python3
             app: apt-get install -y -qq btop
           - name: Fedora 40
             image: fedora:40
             deps: >-
               dnf install -y -q bubblewrap binutils jq file xz zstd findutils
-              curl ca-certificates
+              curl ca-certificates python3
             app: dnf install -y -q btop
           - name: Arch
             image: archlinux:latest
             deps: >-
               pacman -Sy --noconfirm --needed bubblewrap binutils jq file xz
-              zstd findutils curl ca-certificates
+              zstd findutils curl ca-certificates python3
             app: pacman -S --noconfirm --needed btop
           - name: openSUSE Tumbleweed
             image: opensuse/tumbleweed:latest
             deps: >-
               zypper -n install -y bubblewrap binutils jq file xz zstd findutils
-              curl ca-certificates
+              curl ca-certificates python3
             app: zypper -n install -y btop
     steps:
       - uses: actions/checkout@v4

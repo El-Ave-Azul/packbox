@@ -12,6 +12,7 @@ main_installer() {
     # ─── Arg parsing ─────────────────────────────────────────────────────────
     # Modo de obtención de binarios: --prebuilt (release) o --from-source.
     # How binaries are obtained: --prebuilt (release) or --from-source.
+    # shellcheck disable=SC2034  # PACKBOX_PREBUILT is consumed by lib/install.sh
     case "${1:-}" in
         --prebuilt)  PACKBOX_PREBUILT=1; shift ;;
         --from-source|--source) PACKBOX_PREBUILT=0; shift ;;
