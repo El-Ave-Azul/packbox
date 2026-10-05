@@ -53,6 +53,13 @@ declare -gA GUI_OF=()
 # D-Bus name the app owns (from a DBusActivatable .desktop).
 declare -gA BUS_OF=()
 
+# Binarios (imagen real) ya registrados: evita duplicados entre pases.
+# Real binaries already registered: dedups across scans.
+declare -gA REG_REAL=()
+# Bundle dirs ya registrados (mismo bundle = misma app).
+# Bundle dirs already registered (same bundle = same app).
+declare -gA REG_BD=()
+
 # is_valid_bus_name <name> — 0 si es un nombre de bus D-Bus válido (con punto).
 # is_valid_bus_name <name> — 0 if it's a valid D-Bus name (with a dot).
 is_valid_bus_name() {
@@ -338,9 +345,11 @@ find_bundle_dir() {
     local nl="${nm,,}"
     nl="${nl// /-}"
     nl="${nl//./-}"
+    # /usr/share/<name> is data (vim runtime, docs), not an app bundle.
+    # /usr/share/<name> es datos (runtime de vim, docs), no un bundle de app.
     local cs=(
         "/opt/$nl" "/opt/${nl//-/_}" "/opt/$nm"
-        "/usr/lib/$nl" "/usr/lib64/$nl" "/usr/share/$nl"
+        "/usr/lib/$nl" "/usr/lib64/$nl"
     )
     local c
     for c in "${cs[@]}"; do
@@ -389,14 +398,24 @@ calc_total() {
 reg_app() {
     local nm="$1" b="$2" cat="$3" aid="$4" gui="$5" tk="$6"
 
-    # Evitar duplicados.
-    # Avoid duplicates.
+    # Evitar duplicados (por ruta y por imagen real entre pases).
+    # Avoid duplicates (by path and by real binary across scans).
     [[ -n "${APPS_MAP[$b]+x}" ]] && return 1
+    local _real
+    _real=$(readlink -f "$b" 2>/dev/null || echo "$b")
+    [[ -n "${REG_REAL[$_real]+x}" ]] && return 1
+    REG_REAL["$_real"]=1
 
     # Bundle dir (vacío si no aplica).
     # Bundle dir (empty if not applicable).
     local bd=""
     bd=$(find_bundle_dir "$b" "$nm" 2>/dev/null || echo "")
+    # Same bundle = same app (e.g. firefox.desktop vs the 'firefox' wrapper).
+    # Mismo bundle = misma app (p. ej. firefox.desktop vs el wrapper 'firefox').
+    if [[ -n "$bd" ]]; then
+        [[ -n "${REG_BD[$bd]+x}" ]] && return 1
+        REG_BD["$bd"]=1
+    fi
 
     # Tamaño: calc_total YA garantiza número.
     # Size: calc_total ALREADY guarantees a number.
@@ -429,24 +448,19 @@ scan_bundles() {
         tgt=$(readlink -f "$sym" 2>/dev/null)
         [[ -z "$tgt" ]] && continue
         local bd=""
+        # Only /opt: a /usr/lib/<top> target is a shared tools/libs dir (go, qt6,
+        # python…), NOT an app bundle — it produced false "apps" (Go, Qml6) and
+        # duplicates. Real /usr/lib/<app> bundles (firefox, thunderbird…) are
+        # picked up by find_bundle_dir() from their .desktop instead.
+        # Solo /opt: un destino /usr/lib/<top> es un dir de libs/herramientas (go,
+        # qt6, python…), NO un bundle de app — generaba "apps" falsas (Go, Qml6) y
+        # duplicados. Los bundles reales bajo /usr/lib (firefox…) los recoge
+        # find_bundle_dir() desde su .desktop.
         case "$tgt" in
             /opt/*)
                 local rel="${tgt#/opt/}"
                 local top="${rel%%/*}"
                 [[ -d "/opt/$top" ]] && bd="/opt/$top"
-                ;;
-            /usr/lib/*|/usr/lib64/*)
-                local pfx="/usr/lib"
-                [[ "$tgt" == /usr/lib64/* ]] && pfx="/usr/lib64"
-                local rel="${tgt#$pfx/}"
-                local top="${rel%%/*}"
-                case "$top" in
-                    bin|sbin|share|lib|lib64|local|applications|pkgconfig|cmake|icons|fonts|themes|man|doc|info|licenses|systemd|dbus-1|mime|X11) continue ;;
-                    python*|perl*|ruby*|node_modules|golang*) continue ;;
-                    *-dev|*-doc|*-data|*-common|*-headers) continue ;;
-                    x86_64-linux-gnu|i386-linux-gnu|aarch64-linux-gnu|arm-linux-gnueabihf) continue ;;
-                esac
-                [[ -d "$pfx/$top" ]] && bd="$pfx/$top"
                 ;;
         esac
         [[ -z "$bd" ]] && continue
@@ -486,6 +500,12 @@ scan_bundles() {
     for bd in "${finals[@]}"; do
         local s="${BD_TO_SYM[$bd]}"
         [[ -n "${APPS_MAP[$s]+x}" ]] && continue
+        local _sr
+        _sr=$(readlink -f "$s" 2>/dev/null || echo "$s")
+        [[ -n "${REG_REAL[$_sr]+x}" ]] && continue
+        REG_REAL["$_sr"]=1
+        [[ -n "${REG_BD[$bd]+x}" ]] && continue
+        REG_BD["$bd"]=1
         local ds
         ds=$(du -sb "$bd" 2>/dev/null | awk '{print $1}')
         [[ -z "$ds" || "$ds" -lt 5242880 ]] && continue
@@ -547,6 +567,12 @@ scan_bundles() {
                     file -b "$f" 2>/dev/null | grep -q ELF && echo "$(stat -c%s "$f" 2>/dev/null || echo 0)|$f"
                 done | sort -rn | head -1 | cut -d'|' -f2)
             [[ -z "$mb" ]] && continue
+            local _mr
+            _mr=$(readlink -f "$mb" 2>/dev/null || echo "$mb")
+            [[ -n "${REG_REAL[$_mr]+x}" ]] && continue
+            REG_REAL["$_mr"]=1
+            [[ -n "${REG_BD[$od]+x}" ]] && continue
+            REG_BD["$od"]=1
             local name
             name=$(basename "$od")
             name="$(tr '[:lower:]' '[:upper:]' <<< "${name:0:1}")${name:1}"
@@ -689,6 +715,8 @@ detect_all() {
     APPS_MAP=()
     APPS_LIST=()
     APPS_SORTED=()
+    REG_REAL=()
+    REG_BD=()
 
     info "$(t L_SEARCHING)..."
     scan_desktop
