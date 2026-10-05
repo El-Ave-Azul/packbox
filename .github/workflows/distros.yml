@@ -56,6 +56,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: ${{ matrix.name }} · empaquetar, exportar, importar y ejecutar
         run: |
+          set +e
           docker run --privileged --rm -v "$PWD:/w" -w /w "${{ matrix.image }}" bash -lc '
             set -e
             ${{ matrix.deps }}
@@ -78,4 +79,10 @@ jobs:
             done
             ./packbox-packager.sh --auto btop
             test -f "$HOME/.local/share/packbox/exports/btop.pbox"
-          '
+          ' 2>&1 | tee distro.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::distros failure on ${{ matrix.name }} (rc=$rc); last log lines:"
+            tail -30 distro.log | while IFS= read -r l; do printf '::error::%s\n' "$l"; done
+          fi
+          exit "$rc"
