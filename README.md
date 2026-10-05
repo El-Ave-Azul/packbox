@@ -128,6 +128,15 @@ cd packbox
 
 El instalador abre un menú; elige la opción **1** (Instalar).
 
+**Sin compilar (binarios precompilados del release):**
+
+```bash
+./packbox-install.sh --prebuilt
+```
+
+Descarga los binarios de tu arquitectura (amd64/arm64), verifica el `SHA256SUMS`
+del release y los instala en segundos — sin compilar y sin Go.
+
 ### Paso 2 — Recargar el shell
 
 ```bash
@@ -264,7 +273,7 @@ Packbox v0.3.0 incluye **15 binarios Go** en `~/.packbox/bin/`:
 
 ### v0.2 — Alcance
 - [ ] Frontend GUI en GTK4 (aplazado)
-- [ ] Binarios precompilados x86_64 y aarch64
+- [x] Binarios precompilados x86_64 y aarch64
 - [x] Índice/repositorio central firmado
 
 ### Futuro

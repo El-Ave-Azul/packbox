@@ -132,6 +132,15 @@ cd packbox
 
 O instalador abre um menu; escolha a opção **1** (Instalar).
 
+**Sem compilar (binários pré-compilados do release):**
+
+```bash
+./packbox-install.sh --prebuilt
+```
+
+Baixa os binários da sua arquitetura (amd64/arm64), verifica o
+`SHA256SUMS` do release e os instala em segundos — sem compilação, sem Go.
+
 ### Passo 2 — Recarregar o shell
 
 ```bash
@@ -401,7 +410,7 @@ Total: 6 chunks únicos em vez de 9.
 
 ### v0.2 — Alcance
 
-- [ ] Binários pré-compilados x86_64 e aarch64 (página de releases)
+- [x] Binários pré-compilados x86_64 e aarch64 (página de releases)
 - [x] Índice/repositório central assinado (`search`/`install` a partir de remoto)
 - [ ] Frontend GUI opcional (GTK4)
 

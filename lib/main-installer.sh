@@ -10,6 +10,12 @@
 main_installer() {
     # ─── Parseo de args ──────────────────────────────────────────────────────
     # ─── Arg parsing ─────────────────────────────────────────────────────────
+    # Modo de obtención de binarios: --prebuilt (release) o --from-source.
+    # How binaries are obtained: --prebuilt (release) or --from-source.
+    case "${1:-}" in
+        --prebuilt)  PACKBOX_PREBUILT=1; shift ;;
+        --from-source|--source) PACKBOX_PREBUILT=0; shift ;;
+    esac
     case "${1:-}" in
         --uninstall|-u)
             select_language
@@ -35,6 +41,8 @@ Uso / Usage:
 Opciones / Options:
   -u, --uninstall   Desinstalar / Uninstall
   -l, --lang        Cambiar idioma / Change language
+      --prebuilt    Binarios precompilados del release (sin compilar) / Prebuilt from the release
+      --from-source Compilar desde fuente / Build from source
   -h, --help        Esta ayuda / This help
 HELP
             return 0

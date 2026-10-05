@@ -1,0 +1,71 @@
+name: release
+
+# Al empujar un tag vX.Y.Z, compila los 15 binarios para amd64 y arm64,
+# empaqueta un tar.gz por arquitectura, genera SHA256SUMS y crea el Release.
+# On a vX.Y.Z tag push, builds the 15 binaries for amd64 and arm64, packages one
+# tar.gz per arch, writes SHA256SUMS and creates the Release.
+#
+# El instalador los usa con:  ./packbox-install.sh --prebuilt
+# The installer uses them with:  ./packbox-install.sh --prebuilt
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: src/go.sum
+      - name: build binaries (${{ matrix.arch }})
+        working-directory: src
+        env:
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: "0"   # static: one artifact runs on every distro
+        run: |
+          mkdir -p ../bin
+          for d in cmd/*/; do
+            b=$(basename "$d")
+            go build -o "../bin/$b" "./$d"
+          done
+      - name: package
+        run: |
+          ver="$(tr -d '[:space:]' < src/internal/version/VERSION)"
+          tar -C bin -czf "packbox-${ver}-linux-${{ matrix.arch }}.tar.gz" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packbox-linux-${{ matrix.arch }}
+          path: packbox-*-linux-${{ matrix.arch }}.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: checksums
+        run: |
+          cd dist
+          sha256sum packbox-*-linux-*.tar.gz | tee SHA256SUMS
+      - name: create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/SHA256SUMS
+          generate_release_notes: true

@@ -17,6 +17,10 @@
 PACKBOX_VERSION="$(cat "${PACKBOX_ROOT:-.}/src/internal/version/VERSION" 2>/dev/null | tr -d '[:space:]')"
 [[ -n "$PACKBOX_VERSION" ]] || PACKBOX_VERSION="0.3.0"
 
+# Repo de GitHub para los binarios precompilados (release assets).
+# GitHub repo for the prebuilt binaries (release assets).
+PACKBOX_REPO="${PACKBOX_REPO:-El-Ave-Azul/packbox}"
+
 # ─── Directorio de instalación (oculto) ──────────────────────────────────────
 # ─── Installation directory (hidden) ─────────────────────────────────────────
 PACKBOX_INSTALL_DIR="$HOME/.packbox"
