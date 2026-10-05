@@ -49,7 +49,7 @@ _PB_MODULES=(
     "lib/desktop.sh"         # create_desktop_entry
     "lib/export.sh"          # export_app
     "lib/import.sh"          # import_app
-    "lib/flatpak.sh"         # flatpak_import (convertir una app de Flatpak)
+    # NOTE: the Flatpak importer (lib/flatpak.sh) was removed from the packager.
 
     # ─── Menús (últimos: usan todo lo anterior) ─────────────────────────────
     # ─── Menus (last: use everything above) ─────────────────────────────────

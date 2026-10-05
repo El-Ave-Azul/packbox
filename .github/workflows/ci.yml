@@ -44,5 +44,3 @@ jobs:
         run: bash tests/integration.sh
       - name: schema + network matrix (tests/matrix.sh)
         run: bash tests/matrix.sh
-      - name: flatpak discovery (tests/flatpak.sh)
-        run: bash tests/flatpak.sh
