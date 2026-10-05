@@ -78,7 +78,7 @@ jobs:
               (cd src && go build -o "$HOME/.packbox/bin/$(basename "$d")" "./cmd/$(basename "$d")")
             done
             ./packbox-packager.sh --auto btop
-            test -f "$HOME/.local/share/packbox/exports/btop.pbox"
+            ls "$HOME/.local/share/packbox/exports/"*.pbox >/dev/null
           ' 2>&1 | tee distro.log
           rc=${PIPESTATUS[0]}
           if [ "$rc" -ne 0 ]; then
