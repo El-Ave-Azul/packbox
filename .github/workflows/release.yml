@@ -62,10 +62,19 @@ jobs:
         run: |
           cd dist
           sha256sum packbox-*-linux-*.tar.gz | tee SHA256SUMS
+      - name: release notes (es + en)
+        run: |
+          ver="$(tr -d '[:space:]' < src/internal/version/VERSION)"
+          : > dist/RELEASE_NOTES.md
+          [ -f "docs/releases/v${ver}.md" ] && cat "docs/releases/v${ver}.md" >> dist/RELEASE_NOTES.md
+          if [ -f "docs/releases/v${ver}.en.md" ]; then
+            printf '\n\n---\n\n' >> dist/RELEASE_NOTES.md
+            cat "docs/releases/v${ver}.en.md" >> dist/RELEASE_NOTES.md
+          fi
       - name: create release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: dist/RELEASE_NOTES.md
           files: |
             dist/*.tar.gz
             dist/SHA256SUMS
-          generate_release_notes: true
